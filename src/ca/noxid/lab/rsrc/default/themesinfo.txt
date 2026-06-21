@@ -1,0 +1,26 @@
+name=Default
+author=Top Secret Anon
+description=i love dogs
+theme=dark
+
+panel-color=#2b2b2b
+splash-color=#101a2e
+border-color=#505050
+map-outline=#727983
+tsc-tag-color=#ff96d7
+tsc-tag-background=#3c3c50
+
+background=#2b2b2b
+background-secondary=#3c3f41
+background-input=#454a4a
+text-color=#aaaaaa
+text-color-bright=#dcdcdc
+selection-color=#4b6eaf
+button-color=#4d5052
+text-color-inactive=#967878
+
+scroll-bar=#4d5052
+scroll-bg=#2b2b2b
+script-bg=#454a4a
+panel-outline=#505050
+divider-col=#3c3f41

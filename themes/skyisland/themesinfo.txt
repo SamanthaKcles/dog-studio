@@ -1,0 +1,26 @@
+name=Sky Island
+author=Tr0ylol
+description=more dogs
+theme=dark
+
+panel-color=#6a8759
+splash-color=#5d6691
+map-outline=#cee5df
+border-color=#353f6b
+tsc-tag-color=#0000ff
+tsc-tag-background=#f0f0f0
+
+background=#3f4977
+background-secondary=#4a568e
+background-input=#7987ad
+text-color=#dddddd
+text-color-bright=#dcdcdc
+selection-color=#4b6eaf
+button-color=#5d6691
+text-color-inactive=#967878
+
+scroll-bar=#6a8759
+scroll-bg=#222944
+script-bg=#222944
+panel-outline=#5a724b
+divider-col=#4a568e

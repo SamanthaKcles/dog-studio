@@ -1,5 +1,7 @@
 package ca.noxid.uiComponents;
 
+import ca.noxid.lab.ThemeDialog;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -20,7 +22,7 @@ public class SplashTabPane extends JTabbedPane {
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		if (this.getTabCount() == 0) {
-			g.setColor(Color.decode("0x000001"));
+			g.setColor(ThemeDialog.getCurrentSplashColor());
 			Rectangle clip = g.getClipBounds();
 			g.fillRect(clip.x, clip.y, clip.width, clip.height);
 			Dimension d = this.getSize();

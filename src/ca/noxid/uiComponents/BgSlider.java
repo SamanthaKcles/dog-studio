@@ -14,8 +14,8 @@ public class BgSlider extends JSlider {
 		background = bg;
 		this.setOpaque(false);
 		this.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED,
-				Color.decode("0xCFE5A0"),
-				Color.decode("0x6B8258")));
+				Color.decode("#cfe5a0"),
+				Color.decode("#6b8258")));
 	}
 
 	public void paintComponent(Graphics g) {

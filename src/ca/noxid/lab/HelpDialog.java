@@ -45,7 +45,7 @@ public class HelpDialog extends JFrame implements TreeSelectionListener, Hyperli
 	 */
 	HelpDialog(URL helpDir) {
 		super();
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
 		}
 		this.setDefaultCloseOperation(HIDE_ON_CLOSE);

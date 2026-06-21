@@ -61,7 +61,7 @@ public class OOBFlagDialog extends JDialog implements ActionListener {
 
 	public OOBFlagDialog(Frame parent, ResourceManager iMan) {
 		super(parent, true);
-		if (EditorApp.blazed)
+		if (ResourceManager.cursor != null)
 			setCursor(ResourceManager.cursor);
 		setLocation(parent.getLocation());
 		setTitle(Messages.getString("EditorApp.168"));

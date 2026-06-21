@@ -12,8 +12,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
+import java.awt.datatransfer.StringSelection;import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -87,7 +86,7 @@ public class NpcTblEditor extends JDialog implements ActionListener {
 	public NpcTblEditor(Frame aFrame) {
 		super(aFrame);
 		this.parentApp = (EditorApp) aFrame;
-		if (EditorApp.blazed)
+		if (ResourceManager.cursor != null)
 			this.setCursor(ResourceManager.cursor);
 		this.setDefaultCloseOperation(HIDE_ON_CLOSE);
 		this.addComponents();
@@ -573,47 +572,56 @@ private JPanel buildMainEditorPane() {
 		slc.weightx = 1.0;
 		slc.weighty = 1.0;
 		slc.insets = new Insets(2, 2, 2, 2);
-		
-		slc.gridx = 0;
-		slc.gridy = 0;
-		spriteLocPane.add(new JPanel(), slc);
-		slc.gridx = 1;
-		JPanel topPanel = new JPanel(new BorderLayout(1, 0));
-		topPanel.add(new JLabel("T"), BorderLayout.WEST);
-		spriteTop.addActionListener(e -> updatePreview());
-		topPanel.add(spriteTop, BorderLayout.CENTER);
-		spriteLocPane.add(topPanel, slc);
-		slc.gridx = 2;
-		spriteLocPane.add(new JPanel(), slc);
-		
-		slc.gridx = 0;
-		slc.gridy = 1;
+
+		slc.gridx = 0; slc.gridy = 0;
 		JPanel leftPanel = new JPanel(new BorderLayout(1, 0));
 		leftPanel.add(new JLabel("L"), BorderLayout.WEST);
 		spriteLeft.addActionListener(e -> updatePreview());
 		leftPanel.add(spriteLeft, BorderLayout.CENTER);
 		spriteLocPane.add(leftPanel, slc);
 		slc.gridx = 1;
-		spriteLocPane.add(new JPanel(), slc);
-		slc.gridx = 2;
-		JPanel rightPanel = new JPanel(new BorderLayout(1, 0));
-		spriteRight.addActionListener(e -> updatePreview());
-		rightPanel.add(spriteRight, BorderLayout.CENTER);
-		rightPanel.add(new JLabel("R"), BorderLayout.EAST);
-		spriteLocPane.add(rightPanel, slc);
-		
-		slc.gridx = 0;
-		slc.gridy = 2;
-		spriteLocPane.add(new JPanel(), slc);
-		slc.gridx = 1;
 		JPanel bottomPanel = new JPanel(new BorderLayout(1, 0));
+		bottomPanel.add(new JLabel("B"), BorderLayout.WEST);
 		spriteBottom.addActionListener(e -> updatePreview());
 		bottomPanel.add(spriteBottom, BorderLayout.CENTER);
-		bottomPanel.add(new JLabel("B"), BorderLayout.EAST);
 		spriteLocPane.add(bottomPanel, slc);
-		slc.gridx = 2;
-		spriteLocPane.add(new JPanel(), slc);
-		
+		slc.gridx = 0; slc.gridy = 1;
+		slc.gridwidth = 1;
+		JPanel topPanel = new JPanel(new BorderLayout(1, 0));
+		topPanel.add(new JLabel("T"), BorderLayout.WEST);
+		spriteTop.addActionListener(e -> updatePreview());
+		topPanel.add(spriteTop, BorderLayout.CENTER);
+		spriteLocPane.add(topPanel, slc);
+		slc.gridx = 0; slc.gridy = 2;
+		JPanel rightPanel = new JPanel(new BorderLayout(1, 0));
+		rightPanel.add(new JLabel("R"), BorderLayout.WEST);
+		spriteRight.addActionListener(e -> updatePreview());
+		rightPanel.add(spriteRight, BorderLayout.CENTER);
+		spriteLocPane.add(rightPanel, slc);
+
+		slc.gridx = 0; slc.gridy = 3;
+		slc.gridwidth = 2;
+		slc.weighty = 0;
+		slc.fill = GridBagConstraints.HORIZONTAL;
+		JButton spriteRectPasteBtn = new JButton("Paste");
+		spriteRectPasteBtn.addActionListener(e -> {
+			try {
+				String clip = (String) Toolkit.getDefaultToolkit()
+						.getSystemClipboard().getData(DataFlavor.stringFlavor);
+				if (clip != null && clip.trim().startsWith("DS|")) {
+					String[] parts = clip.trim().substring(3).split("\\|");
+					if (parts.length == 4) {
+						spriteLeft.setText(parts[0].trim());
+						spriteTop.setText(parts[1].trim());
+						spriteRight.setText(parts[2].trim());
+						spriteBottom.setText(parts[3].trim());
+						updatePreview();
+					}
+				}
+			} catch (Exception ignored) {}
+		});
+		spriteLocPane.add(spriteRectPasteBtn, slc);
+
 		retVal.add(spriteLocPane, c);
 		return retVal;
 	}
@@ -1030,7 +1038,7 @@ public void populate(GameInfo inf) {
 	}
 
 	private static class NpcTblClipboardData {
-		private static final String PREFIX = "DAWGNPC|";
+		private static final String PREFIX = "DOGNPC|";
 		private final Rectangle hitbox;
 		private final Rectangle display;
 		private final Rectangle spriteLocation;

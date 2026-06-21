@@ -39,4 +39,4 @@
 0038 Living Waterway
 0039 Seal Chamber
 0040 Toroko's Theme
-0041 ["White"]
+0041 White

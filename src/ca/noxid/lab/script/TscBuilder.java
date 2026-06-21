@@ -2,16 +2,18 @@ package ca.noxid.lab.script;
 
 import ca.noxid.lab.EditorApp;
 import ca.noxid.lab.Messages;
+import ca.noxid.lab.rsrc.ResourceManager;
 import ca.noxid.uiComponents.BgPanel;
 import com.carrotlord.string.StrTools;
 
+import javax.imageio.ImageIO;
 import javax.script.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
-import java.net.URL;
+import java.io.InputStream;
 
 public class TscBuilder extends JPanel {
 	private static final long serialVersionUID = -6958912249152141539L;
@@ -23,8 +25,7 @@ public class TscBuilder extends JPanel {
 	}
 
 	private void buildComponents(BufferedImage i) {
-		JPanel leftPanel = new BgPanel(new GridBagLayout(), i);
-		leftPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+		JPanel leftPanel = new BgPanel(new GridBagLayout(), i);		leftPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 		this.setPreferredSize(new Dimension(520, 240));
 		JPanel rightPanel = new BgPanel(new GridBagLayout(), i);
 		this.setLayout(new GridBagLayout());
@@ -82,8 +83,14 @@ public class TscBuilder extends JPanel {
 		c.gridy = 1;
 		c.weightx = 0.5;
 		c.weighty = 0.5;
-		URL kittenURL = EditorApp.class.getResource("rsrc/RainbowCat.gif"); //$NON-NLS-1$
-		ImageIcon catImg = new ImageIcon(kittenURL, "pic"); //$NON-NLS-1$
+		ImageIcon catImg;
+		try {
+			InputStream catIs = ResourceManager.openThemedResource(EditorApp.getTheme(), "rainbow.gif");
+			catImg = catIs != null ? new ImageIcon(ImageIO.read(catIs)) : new ImageIcon();
+			if (catIs != null) catIs.close();
+		} catch (Exception e) {
+			catImg = new ImageIcon();
+		}
 		JLabel kittyLabel = new JLabel(catImg);
 		leftPanel.add(kittyLabel, c); //$NON-NLS-1$
 

@@ -1,6 +1,7 @@
 package ca.noxid.lab.entity;
 
 import ca.noxid.lab.EditorApp;
+import ca.noxid.lab.EditorConfigDialog;
 import ca.noxid.lab.Messages;
 import ca.noxid.lab.mapdata.MapInfo;
 import ca.noxid.lab.mapdata.MapInfo.EntityEdit;
@@ -32,15 +33,21 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 	private JList<EntityData> entityDisplay = new JList<>();
 
 	public JList<EntityData> getEntityList() {return entityDisplay;}
+	public Set<PxeEntry> getSelectionList() {return selectionList;}
 	private Point mouseLoc =  new Point();
 	private Rectangle dragSelectRect;
 	
 	private EntitySettings editPane;
-	public JPanel getEditPane() {return editPane;}
-
+	public EntitySettings getEditPane() {return editPane;}
+	private EntitySettingsPanel opsFlagsPanel;
+	public void setOpsFlagsPanel(EntitySettingsPanel p) { opsFlagsPanel = p; }
 	private JMenuItem popup_addEntity;
+
+	public EditorApp activePerspective;
+	public EditorApp PERSPECTIVE_ENTITY;
 	
 	public EntityPane(EditorApp p, MapInfo data) {
+
 		super(p);
 		this.iMan = p.getImageManager();
 		this.parent = p;
@@ -149,7 +156,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 		popup.add(clearall);
 		this.add(popup);
 	}
-	
+
 	@Override
 	protected void initMouse() {
 		EntMouseAdapter ema = new EntMouseAdapter();
@@ -177,17 +184,17 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 		r.grow(1, 1);
 		repaint(r);
 	}
-	
+
 	private void showStackedEntitySelectionPopup(List<PxeEntry> pxeStack, int x, int y) {
 		JPopupMenu selectMenu = new JPopupMenu();
-		
+
 		for (PxeEntry e : pxeStack) {
 			JMenuItem item = new JMenuItem(new EntitySelectionToggleAction(e));
 			EntityData inf = dataHolder.getEntityInfo(e.getType());
 			String name = "????";
 			if (inf != null ) {
 				name = inf.getName();
-			}				
+			}
 			String title = e.getOrder() + " - " + name.trim() + "#" + e.getEvent();
 			if (selectionList.contains(e)) {
 				title = "* " + title;
@@ -197,10 +204,10 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 			item.setText(title);
 			selectMenu.add(item);
 		}
-		
+
 		selectMenu.show(this, x, y);
 	}
-	
+
 	
 	/////////////////////////////////////////////////////////////////////// 
 	// 	Classes
@@ -270,7 +277,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 				showStackedEntitySelectionPopup(entityStack, eve.getX(), eve.getY());
 			}
 			if (selectionListChanged) {
-				editPane.listChanged();
+				notifySelectionChanged();
 				repaint();
 			}
 		}
@@ -357,7 +364,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 						selectionList.add(pxe);
 					}
 				}
-				editPane.listChanged();
+				notifySelectionChanged();
 				dragSelectRect = null;
 				repaint();
 			}
@@ -487,7 +494,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 				while (pxeIt.hasNext()) {
 					selectionList.add(pxeIt.next());
 				}
-				editPane.listChanged();
+				notifySelectionChanged();
 				repaint();
 				
 			}
@@ -504,6 +511,221 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 	}
 	
 	
+	private void notifySelectionChanged() {
+		editPane.listChanged();
+		if (opsFlagsPanel != null) opsFlagsPanel.listChanged();
+	}
+
+	class EntitySettings extends BgPanel implements ActionListener {
+		private static final long serialVersionUID = 4649521655943734465L;
+
+		private FormattedUpdateTextField flagIDInput;
+		private FormattedUpdateTextField eventInput;
+		private FormattedUpdateTextField orderInput;
+		private FormattedUpdateTextField cv01Input;
+		private FormattedUpdateTextField cv02Input;
+		private FormattedUpdateTextField cv03Input;
+		private FormattedUpdateTextField cv04Input;
+		private FormattedUpdateTextField cv05Input;
+		private FormattedUpdateTextField cv06Input;
+		private JLabel selectCountLabel;
+		private JLabel flagLabel;
+		boolean active = false;
+
+		private final NumberFormat lFormat =
+				FormattedUpdateTextField.getNumberOnlyFormat(1, 4);
+
+		Set<PxeEntry> entityList;
+
+		EntitySettings(Set<PxeEntry> selectionList) {
+			super(iMan.getImg(ResourceManager.rsrcBgBlue));
+			entityList = selectionList;
+			this.setLayout(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 0;
+			c.gridy = 0;
+			c.anchor = GridBagConstraints.WEST;
+			c.ipadx = 2;
+			selectCountLabel = new JLabel("");
+			this.add(selectCountLabel, c);
+			c.gridy++;
+			this.add(new JLabel(Messages.getString("EntityPane.4")), c); //$NON-NLS-1$
+			c.gridy++;
+			this.add(new JLabel(Messages.getString("EntityPane.5")), c); //$NON-NLS-1$
+			c.gridy++;
+			this.add(new JLabel(Messages.getString("EntityPane.6")), c); //$NON-NLS-1$
+			c.gridy++;
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.1")), c); c.gridy++; //$NON-NLS-1$
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.2")), c); c.gridy++; //$NON-NLS-1$
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.3")), c); c.gridy++; //$NON-NLS-1$
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.4")), c); c.gridy++; //$NON-NLS-1$
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.5")), c); c.gridy++; //$NON-NLS-1$
+				this.add(new JLabel(Messages.getString("EntityPane.Custom.6")), c); c.gridy++; //$NON-NLS-1$
+			}
+			this.add(new JLabel(Messages.getString("EntityPane.7")), c); //$NON-NLS-1$
+			c.gridy = 1;
+			c.gridx = 1;
+			flagIDInput = new FormattedUpdateTextField(lFormat);
+			flagIDInput.setColumns(4);
+			flagIDInput.addActionListener(this);
+			this.add(flagIDInput, c);
+			c.gridy++;
+			eventInput = new FormattedUpdateTextField(lFormat);
+			eventInput.setColumns(4);
+			eventInput.addActionListener(this);
+			this.add(eventInput, c);
+			c.gridy++;
+			orderInput = new FormattedUpdateTextField(lFormat);
+			orderInput.setColumns(4);
+			orderInput.addActionListener(this);
+			this.add(orderInput, c);
+			c.gridy++;
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				cv01Input = new FormattedUpdateTextField(lFormat);
+				cv01Input.setColumns(4); cv01Input.addActionListener(this);
+				this.add(cv01Input, c); c.gridy++;
+				cv02Input = new FormattedUpdateTextField(lFormat);
+				cv02Input.setColumns(4); cv02Input.addActionListener(this);
+				this.add(cv02Input, c); c.gridy++;
+				cv03Input = new FormattedUpdateTextField(lFormat);
+				cv03Input.setColumns(4); cv03Input.addActionListener(this);
+				this.add(cv03Input, c); c.gridy++;
+				cv04Input = new FormattedUpdateTextField(lFormat);
+				cv04Input.setColumns(4); cv04Input.addActionListener(this);
+				this.add(cv04Input, c); c.gridy++;
+				cv05Input = new FormattedUpdateTextField(lFormat);
+				cv05Input.setColumns(4); cv05Input.addActionListener(this);
+				this.add(cv05Input, c); c.gridy++;
+				cv06Input = new FormattedUpdateTextField(lFormat);
+				cv06Input.setColumns(4); cv06Input.addActionListener(this);
+				this.add(cv06Input, c); c.gridy++;
+			}
+			flagLabel = new JLabel("0000"); //$NON-NLS-1$
+			this.add(flagLabel, c);
+			switchAll(false);
+		}
+
+		private void switchAll(boolean state) {
+			if (active != state) {
+				flagIDInput.setEnabled(state);
+				eventInput.setEnabled(state);
+				orderInput.setEnabled(state);
+				if (cv01Input != null) cv01Input.setEnabled(state);
+				if (cv02Input != null) cv02Input.setEnabled(state);
+				if (cv03Input != null) cv03Input.setEnabled(state);
+				if (cv04Input != null) cv04Input.setEnabled(state);
+				if (cv05Input != null) cv05Input.setEnabled(state);
+				if (cv06Input != null) cv06Input.setEnabled(state);
+				active = state;
+			}
+		}
+
+		void listChanged() {
+			if (entityList.isEmpty()) {
+				selectCountLabel.setText("");
+				switchAll(false);
+			} else if (entityList.size() == 1) {
+				selectCountLabel.setText("");
+				switchAll(true);
+				PxeEntry p = entityList.iterator().next();
+				flagIDInput.setText(String.valueOf(p.getFlagID()));
+				eventInput.setText(String.valueOf(p.getEvent()));
+				orderInput.setText(String.valueOf(p.getOrder()));
+				if (cv01Input != null) cv01Input.setText(String.valueOf(p.getCustomValue01()));
+				if (cv02Input != null) cv02Input.setText(String.valueOf(p.getCustomValue02()));
+				if (cv03Input != null) cv03Input.setText(String.valueOf(p.getCustomValue03()));
+				if (cv04Input != null) cv04Input.setText(String.valueOf(p.getCustomValue04()));
+				if (cv05Input != null) cv05Input.setText(String.valueOf(p.getCustomValue05()));
+				if (cv06Input != null) cv06Input.setText(String.valueOf(p.getCustomValue06()));
+				int flags = p.getFlags();
+				flagLabel.setText(String.format("0x%04X", flags)); //$NON-NLS-1$
+				entityDisplay.setSelectedValue(p.getInfo(), true);
+			} else {
+				selectCountLabel.setText("Selected: " + entityList.size());
+				switchAll(true);
+				orderInput.setEnabled(false);
+				String flagID = null;
+				String event = null;
+				for (PxeEntry p : entityList) {
+					if (flagID == null) {
+						flagID = String.valueOf(p.getFlagID());
+					} else if (!String.valueOf(p.getFlagID()).equals(flagID)) {
+						flagID = "****"; //$NON-NLS-1$
+					}
+					if (event == null) {
+						event = String.valueOf(p.getEvent());
+					} else if (!String.valueOf(p.getEvent()).equals(event)) {
+						event = "****"; //$NON-NLS-1$
+					}
+				}
+				flagIDInput.setText(flagID);
+				eventInput.setText(event);
+				if (cv01Input != null) cv01Input.setText("");
+				if (cv02Input != null) cv02Input.setText("");
+				if (cv03Input != null) cv03Input.setText("");
+				if (cv04Input != null) cv04Input.setText("");
+				if (cv05Input != null) cv05Input.setText("");
+				if (cv06Input != null) cv06Input.setText("");
+				flagLabel.setText("");
+			}
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent eve) {
+			if (!entityList.isEmpty()) {
+				Object src = eve.getSource();
+				if (src == flagIDInput) {
+					int flag = 0;
+					try { flag = Integer.parseInt(flagIDInput.getText()); }
+					catch (NumberFormatException err) { flagIDInput.setText("0"); }
+					for (PxeEntry e : entityList) e.setFlagID(flag);
+				} else if (src == eventInput) {
+					int event = 0;
+					try { event = Integer.parseInt(eventInput.getText()); }
+					catch (NumberFormatException err) { eventInput.setText("0"); }
+					for (PxeEntry e : entityList) e.setEvent(event);
+				} else if (src == orderInput) {
+					int order = 0;
+					try { order = Integer.parseInt(orderInput.getText()); }
+					catch (NumberFormatException err) { orderInput.setText("0"); }
+					entityList.iterator().next().setOrder(order);
+				} else if (cv01Input != null && src == cv01Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv01Input.getText()); }
+					catch (NumberFormatException err) { cv01Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue01(v);
+				} else if (cv02Input != null && src == cv02Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv02Input.getText()); }
+					catch (NumberFormatException err) { cv02Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue02(v);
+				} else if (cv03Input != null && src == cv03Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv03Input.getText()); }
+					catch (NumberFormatException err) { cv03Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue03(v);
+				} else if (cv04Input != null && src == cv04Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv04Input.getText()); }
+					catch (NumberFormatException err) { cv04Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue04(v);
+				} else if (cv05Input != null && src == cv05Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv05Input.getText()); }
+					catch (NumberFormatException err) { cv05Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue05(v);
+				} else if (cv06Input != null && src == cv06Input) {
+					int v = 0;
+					try { v = Integer.parseInt(cv06Input.getText()); }
+					catch (NumberFormatException err) { cv06Input.setText("0"); }
+					for (PxeEntry e : entityList) e.setCustomValue06(v);
+				}
+				notifySelectionChanged();
+			}
+		}
+	}
+
 	class EntitySelection implements Transferable {
 		Set<PxeEntry> data;
 		
@@ -531,208 +753,6 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 			return arg0.equals(supportedFlav);
 		}
 	}
-	
-	class EntitySettings extends BgPanel implements ActionListener {
-		private static final long serialVersionUID = 4649521655943734465L;
-		
-		private FormattedUpdateTextField flagIDInput;
-		private FormattedUpdateTextField eventInput;
-		private FormattedUpdateTextField orderInput;
-		private JLabel selectCountLabel;
-		private JLabel flagLabel;
-		
-		private JCheckBox[] flagArray;
-		boolean active = false;
-		
-		private final NumberFormat lFormat = 
-				FormattedUpdateTextField.getNumberOnlyFormat(1, 4);
-		
-		
-		
-		Set<PxeEntry> entityList;
-		
-		EntitySettings(Set<PxeEntry> selectionList) {
-			super(iMan.getImg(ResourceManager.rsrcBgBlue)); //$NON-NLS-1$
-			entityList = selectionList;
-			this.setLayout(new GridBagLayout());
-			GridBagConstraints c = new GridBagConstraints();
-			c.gridx = 0;
-			c.gridy = 0;
-			c.anchor = GridBagConstraints.WEST;
-			c.ipadx = 2;
-			selectCountLabel = new JLabel("");
-			this.add(selectCountLabel, c);
-			c.gridy++;
-			this.add(new JLabel(Messages.getString("EntityPane.4")), c); //$NON-NLS-1$
-			c.gridy++;
-			this.add(new JLabel(Messages.getString("EntityPane.5")), c); //$NON-NLS-1$
-			c.gridy++;
-			this.add(new JLabel(Messages.getString("EntityPane.6")), c); //$NON-NLS-1$
-			c.gridy++;
-			this.add(new JLabel(Messages.getString("EntityPane.7")), c); //$NON-NLS-1$
-			c.gridy = 1;
-			c.gridx = 1;
-			flagIDInput = new FormattedUpdateTextField(lFormat);
-			flagIDInput.setColumns(4);
-			flagIDInput.addActionListener(this);
-			this.add(flagIDInput, c);
-			c.gridy++;
-			eventInput = new FormattedUpdateTextField(lFormat);
-			eventInput.setColumns(4);
-			eventInput.addActionListener(this);
-			this.add(eventInput, c);
-			c.gridy++;
-			orderInput = new FormattedUpdateTextField(lFormat);
-			orderInput.setColumns(4);
-			orderInput.addActionListener(this);
-			this.add(orderInput, c);
-			c.gridy++;
-			flagLabel = new JLabel("0000"); //$NON-NLS-1$
-			this.add(flagLabel, c);
-			
-			//create flag value checkboxes
-			c.gridx = 0;
-			c.gridy++;
-			c.gridwidth = GridBagConstraints.REMAINDER;
-			flagArray = new JCheckBox[16];
-			for (int i = 0; i < flagArray.length; i++) {
-				flagArray[i] = new JCheckBox(EntityData.flagNames[i]);
-				flagArray[i].addActionListener(this);
-				flagArray[i].setOpaque(false);
-				this.add(flagArray[i], c);
-				c.gridy++;
-			}
-			switchAll(false);
-		}
-		
-		private void switchAll(boolean state) {
-			if (active != state) {
-				flagIDInput.setEnabled(state);
-				eventInput.setEnabled(state);
-				orderInput.setEnabled(state);
-				for (JCheckBox c : flagArray) {
-					c.setEnabled(state);
-				}
-				active = state;
-			}			
-		}
-		
-		private void listChanged() {
-			if (entityList.isEmpty()) {
-				selectCountLabel.setText("");
-				switchAll(false);
-			} else if (entityList.size() == 1){
-				selectCountLabel.setText("");
-				switchAll(true);
-				PxeEntry p = entityList.iterator().next();
-				flagIDInput.setText(String.valueOf(p.getFlagID()));
-				eventInput.setText(String.valueOf(p.getEvent()));
-				orderInput.setText(String.valueOf(p.getOrder()));
-				int flags = p.getFlags();
-				flagLabel.setText(String.format("0x%04X", flags)); //$NON-NLS-1$
-				int bit = 1;
-				for (int i = 0; i < flagArray.length; i++) {
-					if ((flags & bit<<i) != 0) {
-						flagArray[i].setSelected(true);
-					} else {
-						flagArray[i].setSelected(false);
-					}
-					flagArray[i].setText(EntityData.flagNames[i]);
-				} //check each bit in the flag
-				entityDisplay.setSelectedValue(p.getInfo(), true);
-			} else {//if size > 1
-				selectCountLabel.setText("Selected: " + entityList.size());
-				switchAll(true);
-				orderInput.setEnabled(false);
-				String flagID = null;
-				String event = null;
-				int[] flagsArray = new int[flagArray.length];
-				for (PxeEntry p : entityList) {
-					if (flagID == null) {
-						flagID = String.valueOf(p.getFlagID());						
-					} else {
-						if (!String.valueOf(p.getFlagID()).equals(flagID)) {
-							flagID = "****"; //$NON-NLS-1$
-						}
-					}
-					if (event == null) {
-						event = String.valueOf(p.getEvent());						
-					} else {
-						if (!String.valueOf(p.getEvent()).equals(event)) {
-							event = "****"; //$NON-NLS-1$
-						}
-					}
-					for (int i = 0; i < flagArray.length; i++) {
-						if ((p.getFlags() & 1 << i) != 0) { //if the flag set
-							flagsArray[i]++;
-						}
-					}
-				}//for each entity in the list
-				flagIDInput.setText(flagID);
-				eventInput.setText(event);
-				for (int i = 0; i < flagArray.length; i++) {
-					if (flagsArray[i] == 0) {
-						flagArray[i].setSelected(false);
-						flagArray[i].setText(EntityData.flagNames[i]);
-					} else {
-						flagArray[i].setSelected(true);
-						flagArray[i].setText(EntityData.flagNames[i] + "*" + flagsArray[i]); //$NON-NLS-1$
-					}
-				}
-			} //if size  > 1
-		}//listChanged();
-
-		@Override
-		public void actionPerformed(ActionEvent eve) {
-			if (!entityList.isEmpty()) {
-				Object src = eve.getSource();
-				if (src == flagIDInput) {
-					int flag = 0;
-					try {
-						flag = Integer.parseInt(flagIDInput.getText());
-					} catch (NumberFormatException err) {
-						flagIDInput.setText("0");
-					}
-					for (PxeEntry e : entityList) {
-						e.setFlagID(flag);
-					}
-				} else if (src == eventInput) {
-					int event = 0;
-					try {
-						event = Integer.parseInt(eventInput.getText());
-					} catch (NumberFormatException err) {
-						eventInput.setText("0");
-					}
-					for (PxeEntry e : entityList) {
-						e.setEvent(event);
-					}
-				} else if (src == orderInput) {
-					int order = 0;
-					try {
-						order = Integer.parseInt(orderInput.getText());
-					} catch (NumberFormatException err) {
-						orderInput.setText("0");
-					}
-					entityList.iterator().next().setOrder(order);
-				} else {
-					//check flags
-					for (int i = 0; i < flagArray.length; i++) {
-						if (src == flagArray[i]) {
-							int selected = (flagArray[i].isSelected()) ? 1 : 0;
-							for (PxeEntry e : entityList) {
-								int oldFlags = e.getFlags();
-								oldFlags &= ~(1 << i);
-								oldFlags |= selected << i;
-								e.setFlags(oldFlags);
-							}//for each entry in selection list
-							listChanged();
-							break;
-						}//if event source is this element in flag array
-					}//for each flag in array
-				}//check flags
-			}//if entity list is not empty
-		}//actionperformed
-	}//::EntitySettings
 
 	class EntityListMouseListener extends MouseAdapter {
 		@Override

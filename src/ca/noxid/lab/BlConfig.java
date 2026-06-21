@@ -11,7 +11,7 @@ import java.util.Scanner;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class BlConfig {
-	private static final String CONFIGNAME = "dawg.ini";
+	private static final String CONFIGNAME = "dog.ini";
 	private int lineResolution = 4;
 	private int entityResolution = 16;
 	private int tileSize = 16;
@@ -175,7 +175,7 @@ public class BlConfig {
 	 * @return
 	 */
 	private File solveLegacyDirectory(File dataDir) {
-		File canonicalFile = new File(dataDir, ".dawgstudio/" + CONFIGNAME);
+		File canonicalFile = new File(dataDir, ".dogstudio/" + CONFIGNAME);
 		if (canonicalFile.exists()) {
 			if (canonicalFile.isDirectory())
 				// you what

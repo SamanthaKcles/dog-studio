@@ -1,0 +1,20 @@
+name=Synthetic Ritual
+author=Evanescent Meadows
+description=Gaze upon the bloodstained wireframe mountains.
+theme=dark
+
+panel-color=#0f0000
+splash-color=#000000
+border-color=#000000
+map-outline=#ff0000
+tsc-tag-color=#ffffff
+tsc-tag-background=#3c0000
+
+background=#0f0000
+background-secondary=#3c0000
+background-input=#000000
+text-color=#bbbbbb
+text-color-bright=#dcdcdc
+selection-color=#640000
+button-color=#640000
+text-color-inactive=#880000

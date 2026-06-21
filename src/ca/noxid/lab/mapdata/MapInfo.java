@@ -3,6 +3,7 @@ package ca.noxid.lab.mapdata;
 import ca.noxid.lab.BlConfig;
 import ca.noxid.lab.Changeable;
 import ca.noxid.lab.EditorApp;
+import ca.noxid.lab.EditorConfigDialog;
 import ca.noxid.lab.Messages;
 import ca.noxid.lab.entity.EntityData;
 import ca.noxid.lab.gameinfo.GameInfo;
@@ -438,6 +439,17 @@ public class MapInfo implements Changeable {
 			currentFile = ResourceManager.checkBase(currentFile);
 			FileInputStream inStream = new FileInputStream(currentFile);
 			FileChannel inChan = inStream.getChannel();
+			FileInputStream cpxeInStream = null;
+			FileChannel cpxeInChan = null;
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				File cpxeFile = new File(directory + "/Stage/" + d.getFile() + ".cpxe"); //$NON-NLS-1$ //$NON-NLS-2$
+				cpxeFile = ResourceManager.checkBase(cpxeFile);
+				if (cpxeFile.exists()) {
+					cpxeInStream = new FileInputStream(cpxeFile);
+					cpxeInChan = cpxeInStream.getChannel();
+				}
+			}
+
 			ByteBuffer hBuf = ByteBuffer.allocate(6);
 			hBuf.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -453,6 +465,15 @@ public class MapInfo implements Changeable {
 				inChan.read(eBuf);
 				eBuf.flip();
 				eBuf.getShort(); // discard this value
+				ByteBuffer cpxeBuf = null;
+				if (cpxeInChan != null) {
+					cpxeBuf = ByteBuffer.allocate(4 + nEnt * 24);
+					cpxeBuf.order(ByteOrder.LITTLE_ENDIAN);
+					cpxeInChan.read(cpxeBuf);
+					cpxeBuf.flip();
+					cpxeBuf.getInt();
+				}
+
 				for (int i = 0; i < nEnt; i++) {
 					int pxeX = eBuf.getShort();
 					int pxeY = eBuf.getShort();
@@ -460,17 +481,28 @@ public class MapInfo implements Changeable {
 					int pxeEvent = eBuf.getShort();
 					int pxeType = eBuf.getShort();
 					int pxeFlags = eBuf.getShort() & 0xFFFF;
-					PxeEntry p = new PxeEntry(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, 1);
+					int cv1 = 0, cv2 = 0, cv3 = 0, cv4 = 0, cv5 = 0, cv6 = 0;
+					if (cpxeBuf != null && cpxeBuf.remaining() >= 24) {
+						cv1 = cpxeBuf.getInt();
+						cv2 = cpxeBuf.getInt();
+						cv3 = cpxeBuf.getInt();
+						cv4 = cpxeBuf.getInt();
+						cv5 = cpxeBuf.getInt();
+						cv6 = cpxeBuf.getInt();
+					}
+					PxeEntry p = new PxeEntry(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, 1,
+							cv1, cv2, cv3, cv4, cv5, cv6);
 					p.filePos = i;
 					pxeList.add(p);
 				}
 				break;
 			case 0x10: // kss pxe
 				nEnt = hBuf.getShort(4);
-				eBuf = ByteBuffer.allocate(nEnt * 13);
+				eBuf = ByteBuffer.allocate(nEnt * 13 + 2);
 				eBuf.order(ByteOrder.LITTLE_ENDIAN);
 				inChan.read(eBuf);
 				eBuf.flip();
+				eBuf.getShort();
 				for (int i = 0; i < nEnt; i++) {
 					int pxeX = eBuf.getShort();
 					int pxeY = eBuf.getShort();
@@ -488,10 +520,12 @@ public class MapInfo implements Changeable {
 				System.err.println(Messages.getString("MapInfo.15")); //$NON-NLS-1$
 				inChan.close();
 				inStream.close();
+				if (cpxeInChan != null) { cpxeInChan.close(); cpxeInStream.close(); }
 				throw new IOException();
 			}
 			inChan.close();
 			inStream.close();
+			if (cpxeInChan != null) { cpxeInChan.close(); cpxeInStream.close(); }
 		} catch (IOException e) {
 			System.err.println(Messages.getString("MapInfo.16") + directory + "/Stage/" + d.getFile()); //$NON-NLS-1$ //$NON-NLS-2$
 		}
@@ -542,6 +576,29 @@ public class MapInfo implements Changeable {
 		public int getType() {
 			return entityType;
 		}
+		private int customValue01;
+		public int getCustomValue01() { return customValue01; }
+		public void setCustomValue01(int num) { customValue01 = num; markChanged(); }
+
+		private int customValue02;
+		public int getCustomValue02() { return customValue02; }
+		public void setCustomValue02(int num) { customValue02 = num; markChanged(); }
+
+		private int customValue03;
+		public int getCustomValue03() { return customValue03; }
+		public void setCustomValue03(int num) { customValue03 = num; markChanged(); }
+
+		private int customValue04;
+		public int getCustomValue04() { return customValue04; }
+		public void setCustomValue04(int num) { customValue04 = num; markChanged(); }
+
+		private int customValue05;
+		public int getCustomValue05() { return customValue05; }
+		public void setCustomValue05(int num) { customValue05 = num; markChanged(); }
+
+		private int customValue06;
+		public int getCustomValue06() { return customValue06; }
+		public void setCustomValue06(int num) { customValue06 = num; markChanged(); }
 
 		// set method below
 		private short flags;
@@ -556,6 +613,7 @@ public class MapInfo implements Changeable {
 		}
 
 		private byte layer;
+
 		private int filePos;
 
 		public int getOrder() {
@@ -597,9 +655,21 @@ public class MapInfo implements Changeable {
 			}
 		}
 
+		PxeEntry(int pxeX, int pxeY, int pxeFlagID, int pxeEvent, int pxeType, int pxeFlags, int pxeLayer,
+				int cv1, int cv2, int cv3, int cv4, int cv5, int cv6) {
+			this(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, pxeLayer);
+			customValue01 = cv1;
+			customValue02 = cv2;
+			customValue03 = cv3;
+			customValue04 = cv4;
+			customValue05 = cv5;
+			customValue06 = cv6;
+		}
+
 		public PxeEntry clone() {
 			return new PxeEntry(this.xTile, this.yTile, this.flagID, this.eventNum, this.entityType, this.flags,
-					this.layer);
+					this.layer, this.customValue01, this.customValue02, this.customValue03,
+					this.customValue04, this.customValue05, this.customValue06);
 		}
 
 		public void draw(Graphics2D g2d, int flags) {
@@ -624,6 +694,12 @@ public class MapInfo implements Changeable {
 					srcImg = iMan.getImg(tileset);
 				else if (tilesetNum == 0x10) // npc myChar
 					srcImg = iMan.getImg(exeData.getMyCharFile());
+				else if (tilesetNum == 0x19 && exeData.getAutumnObjectsFile() != null)
+					srcImg = iMan.getImg(exeData.getAutumnObjectsFile());
+				else if (tilesetNum == 0x26 && exeData.getAutumnItemsFile() != null)
+					srcImg = iMan.getImg(exeData.getAutumnItemsFile());
+				else if (tilesetNum == 0x27 && exeData.getAutumnCharactersFile() != null)
+					srcImg = iMan.getImg(exeData.getAutumnCharactersFile());
 				else
 					srcImg = null;
 
@@ -718,6 +794,19 @@ public class MapInfo implements Changeable {
 			retVal.putShort(flags);
 			// if (EditorApp.EDITOR_MODE >= 1)
 			// retVal.put(layer);
+			retVal.flip();
+			return retVal;
+		}
+		
+		public ByteBuffer toCustomBuf() {
+			ByteBuffer retVal = ByteBuffer.allocate(4 * 6);
+			retVal.order(ByteOrder.LITTLE_ENDIAN);
+			retVal.putInt(customValue01);
+			retVal.putInt(customValue02);
+			retVal.putInt(customValue03);
+			retVal.putInt(customValue04);
+			retVal.putInt(customValue05);
+			retVal.putInt(customValue06);
 			retVal.flip();
 			return retVal;
 		}
@@ -1178,8 +1267,8 @@ public class MapInfo implements Changeable {
 			Collections.sort(pxeList);
 			FileOutputStream out = new FileOutputStream(pxeFile);
 			FileChannel pxeChannel = out.getChannel();
-			headerBuf = ByteBuffer.wrap(pxeTag);
-			pxeChannel.write(headerBuf);
+			byte[] pxeTagBytes = new byte[]{ 'P', 'X', 'E', 0 };
+			pxeChannel.write(ByteBuffer.wrap(pxeTagBytes));
 			ByteBuffer dumbBuf = ByteBuffer.allocate(4);
 			dumbBuf.order(ByteOrder.LITTLE_ENDIAN);
 			dumbBuf.putShort((short) pxeList.size());
@@ -1195,6 +1284,24 @@ public class MapInfo implements Changeable {
 		} catch (IOException e) {
 			StrTools.msgBox("Error saving .pxe file. (check read-only?)");
 			e.printStackTrace();
+		}
+
+		if (EditorConfigDialog.isAutumnalLabEnabled()) {
+			File cpxeFile = new File(exeData.getDataDirectory() + "/Stage/" + d.getFile() + ".cpxe"); //$NON-NLS-1$ //$NON-NLS-2$
+			byte[] cpxeTag = { 'A', 'U', 'T', 0 };
+			try {
+				FileOutputStream out = new FileOutputStream(cpxeFile);
+				FileChannel cpxeChannel = out.getChannel();
+				cpxeChannel.write(ByteBuffer.wrap(cpxeTag));
+				for (PxeEntry nextEntry : pxeList) {
+					cpxeChannel.write(nextEntry.toCustomBuf());
+				}
+				cpxeChannel.close();
+				out.close();
+			} catch (IOException e) {
+				StrTools.msgBox("Error saving .cpxe file. (check read-only?)");
+				e.printStackTrace();
+			}
 		}
 
 		// save the pxa

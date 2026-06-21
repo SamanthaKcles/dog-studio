@@ -1,0 +1,11 @@
+name=Booster's Lab
+author=Noxid
+description=The original.
+theme=light
+
+panel-color=#83a767
+splash-color=#30203d
+border-color=#505050
+map-outline=#ff00ff
+tsc-tag-color=#0000ff
+tsc-tag-background=#f0f0f0

@@ -26,7 +26,7 @@ class ResizeDialog extends JDialog implements ActionListener {
 
 	public ResizeDialog(Frame aFrame, int defaultX, int defaultY) {
 		super(aFrame, true);
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
 		}
 		this.setLocation(aFrame.getLocation());

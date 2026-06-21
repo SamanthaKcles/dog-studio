@@ -16,7 +16,7 @@ public class TscDialog extends JDialog {
 
 	public TscDialog(Frame aFrame, String title, TscPane tp) {
 		super(aFrame, title);
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
 		}
 		tsc = tp;

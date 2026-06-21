@@ -1,0 +1,12 @@
+name=Cave Editor
+author=Wistil
+description=Ancient tech haunts your computer...
+theme=light
+
+panel-color=#f0f0f0
+splash-color=#ffffff
+border-color=#a0a0a0
+map-outline=#ff00ff
+tsc-tag-color=#ff00ff
+tsc-tag-background=#f0f0f0
+panel-outline=a0a0a0

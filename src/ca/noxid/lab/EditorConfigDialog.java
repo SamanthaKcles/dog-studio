@@ -14,10 +14,75 @@ import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 public class EditorConfigDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-	
+
+	private static final String PREF_PLAY_SFX = "play_sfx";
+	private static final String PREF_WARN_SCRIPT_ERRORS = "warn_script_errors";
+	private static final String PREF_WARN_UNRECOGNIZED_COMMANDS = "warn_unrecognized_commands";
+	private static final String PREF_AUTUMNAL_LAB = "autumnal_lab";
+	private static final String PREF_SCROLL_SPEED = "scroll_speed";
+
+	public static String getScrollSpeed() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.get(PREF_SCROLL_SPEED, "medium");
+	}
+
+	private static void setScrollSpeed(String speed) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.put(PREF_SCROLL_SPEED, speed);
+	}
+
+	public static int getScrollUnitIncrement() {
+		switch (getScrollSpeed()) {
+			case "high":   return 30;
+			case "medium": return 20;
+			default:       return 10;
+		}
+	}
+
+	public static boolean isSfxEnabled() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_PLAY_SFX, true);
+	}
+
+	private static void setSfxEnabled(boolean enabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_PLAY_SFX, enabled);
+	}
+
+	public static boolean isWarnScriptErrors() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_WARN_SCRIPT_ERRORS, true);
+	}
+
+	private static void setWarnScriptErrors(boolean enabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_WARN_SCRIPT_ERRORS, enabled);
+	}
+
+	public static boolean isWarnUnrecognizedCommands() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_WARN_UNRECOGNIZED_COMMANDS, true);
+	}
+
+	private static void setWarnUnrecognizedCommands(boolean enabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_WARN_UNRECOGNIZED_COMMANDS, enabled);
+	}
+
+	public static boolean isAutumnalLabEnabled() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_AUTUMNAL_LAB, false);
+	}
+
+	private static void setAutumnalLabEnabled(boolean enabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_AUTUMNAL_LAB, enabled);
+	}
+
 	private JList<String> categoryList;
 	private JPanel contentPanel;
 	private ResourceManager iMan;
@@ -31,12 +96,21 @@ public class EditorConfigDialog extends JDialog {
 	private JTextField abbField;
 	private JTextArea descArea;
 	private Map<String, TscCommandData> tscCommands;
+	private boolean loadingTscDetails = false;
 
+	private boolean requiresRestart = false;
+
+	private void markRestartRequired() {
+		requiresRestart = true;
+	}
 	private DefaultListModel<String> musicListModel;
 	private DefaultListModel<String> sfxListModel;
 	private DefaultListModel<String> endListModel;
 	private DefaultListModel<String> mapBossListModel;
 	private DefaultListModel<String> bgTypeListModel;
+	private Map<String, TscCommandData> tscCommandsSnapshot;
+	private List<String> musicListSnapshot;
+	private List<String> sfxListSnapshot;
 	
 	private static final String[] ID_TYPES = {
 		"None", "Arms", "Ammo", "Direction", "Event", "Equip", "Face", "Flag", 
@@ -47,11 +121,11 @@ public class EditorConfigDialog extends JDialog {
 	public EditorConfigDialog(Frame parent, ResourceManager iMan) {
 		super(parent, "Editor Configuration", true);
 		this.iMan = iMan;
-		if (EditorApp.blazed) this.setCursor(ResourceManager.cursor);
+		if (ResourceManager.cursor != null) this.setCursor(ResourceManager.cursor);
 		
 		setLayout(new BorderLayout());
 		
-		String[] categories = {"TSC Commands", "End Commands", "Music List", "SFX List", "Equip List", "Map Bosses", "Background Types"};
+		String[] categories = {"General Config", "TSC Commands", "End Commands", "Music List", "SFX List", "Equip List", "Map Bosses", "Background Types"};
 		categoryList = new JList<>(categories);
 		categoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		categoryList.addListSelectionListener(new ListSelectionListener() {
@@ -86,23 +160,36 @@ public class EditorConfigDialog extends JDialog {
 		add(contentPanel, BorderLayout.CENTER);
 		
 		JPanel bottomPanel = new JPanel(new BorderLayout());
-		JLabel warningLabel = new JLabel("A restart is required for changes to take place.", SwingConstants.CENTER);
-		bottomPanel.add(warningLabel, BorderLayout.NORTH);
 		
 		JPanel buttonPanel = new JPanel();
 		JButton saveButton = new JButton("Save");
-		JButton closeButton = new JButton("Close");
+		JButton closeButton = new JButton("Cancel");
 		
 		saveButton.addActionListener(e -> {
 			int result = JOptionPane.showConfirmDialog(this, "Save all changes?", "Confirm Save", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
 				saveAllChanges();
+				if (requiresRestart) {
+					int restartResult = JOptionPane.showConfirmDialog(
+							this,
+							"Changes saved. A restart is required for some changes to take effect. Restart now?",
+							"Restart required",
+							JOptionPane.YES_NO_OPTION);
+					dispose();
+					if (restartResult == JOptionPane.YES_OPTION) {
+						EditorApp.restartApplication();
+					}
+				} else {
+					JOptionPane.showMessageDialog(this, "Changes saved.", "Saved", JOptionPane.INFORMATION_MESSAGE);
+					dispose();
+				}
 			}
 		});
 		
 		closeButton.addActionListener(e -> {
-			int result = JOptionPane.showConfirmDialog(this, "Close without saving?", "Confirm Close", JOptionPane.YES_NO_OPTION);
+			int result = JOptionPane.showConfirmDialog(this, "Discard all unsaved changes?", "Confirm Cancel", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
+				restoreOriginalState();
 				dispose();
 			}
 		});
@@ -120,6 +207,7 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void initializePanels() {
+		contentPanel.add(createGeneralConfigPanel(), "General Config");
 		contentPanel.add(createTscCommandPanel(), "TSC Commands");
 		contentPanel.add(createSimpleListPanel("End Commands", "endlist.txt"), "End Commands");
 		contentPanel.add(createMusicListPanel(), "Music List");
@@ -127,6 +215,7 @@ public class EditorConfigDialog extends JDialog {
 		contentPanel.add(createSimpleListPanel("Equip List", "equipList.txt"), "Equip List");
 		contentPanel.add(createSimpleListPanel("Map Bosses", "mapBosses.txt"), "Map Bosses");
 		contentPanel.add(createSimpleListPanel("Background Types", "backgroundTypes.txt"), "Background Types");
+		snapshotOriginalState();
 	}
 	
 	private void switchCategory(String category) {
@@ -135,6 +224,104 @@ public class EditorConfigDialog extends JDialog {
 		}
 	}
 	
+	private JPanel createGeneralConfigPanel() {
+		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
+		panel.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.NORTHWEST;
+		c.insets = new Insets(10, 10, 4, 10);
+		c.gridx = 0;
+		c.gridy = 0;
+		c.weightx = 0;
+		c.weighty = 0;
+
+		JCheckBox playSfxCheck = new JCheckBox("Play SFX");
+		playSfxCheck.setOpaque(false);
+		playSfxCheck.setSelected(isSfxEnabled());
+		playSfxCheck.addActionListener(e -> setSfxEnabled(playSfxCheck.isSelected()));
+		panel.add(playSfxCheck, c);
+
+		c.gridy++;
+		JCheckBox warnScriptErrorsCheck = new JCheckBox("Warn Script Errors");
+		warnScriptErrorsCheck.setOpaque(false);
+		warnScriptErrorsCheck.setSelected(isWarnScriptErrors());
+		warnScriptErrorsCheck.addActionListener(e -> setWarnScriptErrors(warnScriptErrorsCheck.isSelected()));
+		panel.add(warnScriptErrorsCheck, c);
+
+		c.gridy++;
+		JCheckBox warnUnrecognizedCommandsCheck = new JCheckBox("Warn Unrecognized Commands");
+		warnUnrecognizedCommandsCheck.setOpaque(false);
+		warnUnrecognizedCommandsCheck.setSelected(isWarnUnrecognizedCommands());
+		warnUnrecognizedCommandsCheck.addActionListener(e -> setWarnUnrecognizedCommands(warnUnrecognizedCommandsCheck.isSelected()));
+		panel.add(warnUnrecognizedCommandsCheck, c);
+
+		c.gridy++;
+		JCheckBox autumnalLabCheck = new JCheckBox("Autumnal Lab Mode");
+		autumnalLabCheck.setOpaque(false);
+		autumnalLabCheck.setSelected(isAutumnalLabEnabled());
+		autumnalLabCheck.addActionListener(e -> {
+			setAutumnalLabEnabled(autumnalLabCheck.isSelected());
+			markRestartRequired();
+		});
+		panel.add(autumnalLabCheck, c);
+
+		// lethrys slop
+		JPanel scrollPanel = new JPanel();
+		scrollPanel.setOpaque(false);
+		scrollPanel.setLayout(new BoxLayout(scrollPanel, BoxLayout.Y_AXIS));
+
+		JLabel scrollLabel = new JLabel("Map Scroll Speed");
+		scrollLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		scrollPanel.add(scrollLabel);
+		scrollPanel.add(Box.createVerticalStrut(4));
+
+		ButtonGroup scrollGroup = new ButtonGroup();
+		JRadioButton highRadio   = new JRadioButton("High");
+		JRadioButton mediumRadio = new JRadioButton("Medium");
+		JRadioButton slowRadio   = new JRadioButton("Slow");
+		highRadio.setOpaque(false);
+		mediumRadio.setOpaque(false);
+		slowRadio.setOpaque(false);
+		highRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+		mediumRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+		slowRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+		scrollGroup.add(highRadio);
+		scrollGroup.add(mediumRadio);
+		scrollGroup.add(slowRadio);
+
+		String currentSpeed = getScrollSpeed();
+		if ("high".equals(currentSpeed))       highRadio.setSelected(true);
+		else if ("slow".equals(currentSpeed))  slowRadio.setSelected(true);
+		else                                   mediumRadio.setSelected(true);
+
+		highRadio.addActionListener(e   -> { setScrollSpeed("high");   markRestartRequired(); });
+		mediumRadio.addActionListener(e -> { setScrollSpeed("medium"); markRestartRequired(); });
+		slowRadio.addActionListener(e   -> { setScrollSpeed("slow");   markRestartRequired(); });
+
+		scrollPanel.add(highRadio);
+		scrollPanel.add(mediumRadio);
+		scrollPanel.add(slowRadio);
+
+		GridBagConstraints sc = new GridBagConstraints();
+		sc.anchor  = GridBagConstraints.NORTHWEST;
+		sc.insets  = new Insets(10, 20, 4, 10);
+		sc.gridx   = 1;
+		sc.gridy   = 0;
+		sc.gridheight = 4;
+		sc.weightx = 1.0;
+		sc.weighty = 0;
+		panel.add(scrollPanel, sc);
+
+		c.gridx = 0;
+		c.gridy = 5;
+		c.gridwidth = 2;
+		c.weighty = 1.0;
+		c.fill = GridBagConstraints.VERTICAL;
+		panel.add(Box.createGlue(), c);
+
+		return panel;
+	}
+
 	@SuppressWarnings("unchecked")
 	private JPanel createTscCommandPanel() {
 		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
@@ -147,6 +334,11 @@ public class EditorConfigDialog extends JDialog {
 		for (String cmd : tscCommands.keySet()) {
 			tscListModel.addElement(cmd);
 		}
+		tscListModel.addListDataListener(new javax.swing.event.ListDataListener() {
+			public void intervalAdded(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+		});
 		tscCommandList = new JList<>(tscListModel);
 		tscCommandList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		tscCommandList.addListSelectionListener(e -> {
@@ -270,10 +462,18 @@ public class EditorConfigDialog extends JDialog {
 		descArea.setWrapStyleWord(true);
 		detailsPanel.add(new JScrollPane(descArea), c);
 		
-		c.gridx = 1; c.gridy = 5; c.weighty = 0; c.fill = GridBagConstraints.NONE;
-		JButton saveCmd = new JButton("Update Command");
-		saveCmd.addActionListener(e -> saveTscCommandDetails());
-		detailsPanel.add(saveCmd, c);
+		javax.swing.event.DocumentListener tscAutoSave = new javax.swing.event.DocumentListener() {
+			public void insertUpdate(javax.swing.event.DocumentEvent e) { saveTscCommandDetails(); }
+			public void removeUpdate(javax.swing.event.DocumentEvent e) { saveTscCommandDetails(); }
+			public void changedUpdate(javax.swing.event.DocumentEvent e) { saveTscCommandDetails(); }
+		};
+		nameField.getDocument().addDocumentListener(tscAutoSave);
+		abbField.getDocument().addDocumentListener(tscAutoSave);
+		descArea.getDocument().addDocumentListener(tscAutoSave);
+		opsCombo.addActionListener(e -> saveTscCommandDetails());
+		for (JComboBox<String> idCombo : idCombos) {
+			idCombo.addActionListener(e -> saveTscCommandDetails());
+		}
 		
 		panel.add(new JScrollPane(detailsPanel), BorderLayout.CENTER);
 		
@@ -286,6 +486,11 @@ public class EditorConfigDialog extends JDialog {
 		
 		musicListModel = new DefaultListModel<>();
 		loadMusicList();
+		musicListModel.addListDataListener(new javax.swing.event.ListDataListener() {
+			public void intervalAdded(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+		});
 		
 		JList<String> list = new JList<>(musicListModel);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
@@ -322,12 +527,28 @@ public class EditorConfigDialog extends JDialog {
 		moveDown.setMaximumSize(btnSize);
 		moveDown.setAlignmentX(Component.LEFT_ALIGNMENT);
 		
+		final boolean[] updatingFromSelection = {false};
 		list.addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting() && list.getSelectedIndex() >= 0) {
+				updatingFromSelection[0] = true;
 				String fullLine = musicListModel.get(list.getSelectedIndex());
 				String songName = extractMusicName(fullLine);
 				nameField.setText(songName);
+				updatingFromSelection[0] = false;
 			}
+		});
+		nameField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+			private void autoUpdate() {
+				if (updatingFromSelection[0]) return;
+				int idx = list.getSelectedIndex();
+				if (idx >= 0) {
+					String newLine = String.format("%04d %s", idx, nameField.getText());
+					musicListModel.set(idx, newLine);
+				}
+			}
+			public void insertUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
+			public void removeUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
+			public void changedUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 		});
 		
 		addNew.addActionListener(e -> {
@@ -376,21 +597,6 @@ public class EditorConfigDialog extends JDialog {
 			}
 		});
 		
-		JButton update = new JButton("Update Name");
-		update.setPreferredSize(btnSize);
-		update.setMaximumSize(btnSize);
-		update.setAlignmentX(Component.LEFT_ALIGNMENT);
-		update.addActionListener(e -> {
-			int idx = list.getSelectedIndex();
-			if (idx >= 0) {
-				String newName = nameField.getText();
-				String newLine = String.format("%04d %s", idx, newName);
-				musicListModel.set(idx, newLine);
-			}
-		});
-		
-		rightPanel.add(update);
-		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(addNew);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(delete);
@@ -410,6 +616,11 @@ public class EditorConfigDialog extends JDialog {
 		
 		sfxListModel = new DefaultListModel<>();
 		loadSfxList();
+		sfxListModel.addListDataListener(new javax.swing.event.ListDataListener() {
+			public void intervalAdded(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+		});
 		
 		JList<String> list = new JList<>(sfxListModel);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
@@ -446,12 +657,28 @@ public class EditorConfigDialog extends JDialog {
 		moveDown.setMaximumSize(btnSize);
 		moveDown.setAlignmentX(Component.LEFT_ALIGNMENT);
 		
+		final boolean[] sfxUpdatingFromSelection = {false};
 		list.addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting() && list.getSelectedIndex() >= 0) {
+				sfxUpdatingFromSelection[0] = true;
 				String fullLine = sfxListModel.get(list.getSelectedIndex());
 				String sfxName = extractSfxName(fullLine);
 				nameField.setText(sfxName);
+				sfxUpdatingFromSelection[0] = false;
 			}
+		});
+		nameField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+			private void autoUpdate() {
+				if (sfxUpdatingFromSelection[0]) return;
+				int idx = list.getSelectedIndex();
+				if (idx >= 0) {
+					String newLine = String.format("%d - %s", idx, nameField.getText());
+					sfxListModel.set(idx, newLine);
+				}
+			}
+			public void insertUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
+			public void removeUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
+			public void changedUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 		});
 		
 		addNew.addActionListener(e -> {
@@ -500,21 +727,6 @@ public class EditorConfigDialog extends JDialog {
 			}
 		});
 		
-		JButton update = new JButton("Update Name");
-		update.setPreferredSize(btnSize);
-		update.setMaximumSize(btnSize);
-		update.setAlignmentX(Component.LEFT_ALIGNMENT);
-		update.addActionListener(e -> {
-			int idx = list.getSelectedIndex();
-			if (idx >= 0) {
-				String newName = nameField.getText();
-				String newLine = String.format("%d - %s", idx, newName);
-				sfxListModel.set(idx, newLine);
-			}
-		});
-		
-		rightPanel.add(update);
-		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(addNew);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(delete);
@@ -538,7 +750,12 @@ public class EditorConfigDialog extends JDialog {
 		if (filename.equals("endlist.txt")) endListModel = model;
 		else if (filename.equals("mapBosses.txt")) mapBossListModel = model;
 		else if (filename.equals("backgroundTypes.txt")) bgTypeListModel = model;
-		
+
+		model.addListDataListener(new javax.swing.event.ListDataListener() {
+			public void intervalAdded(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
+		});
 		JList<String> list = new JList<>(model);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
 		
@@ -571,7 +788,7 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void loadTscCommands() {
-		File fileToLoad = new File("tsc_list.txt");
+		File fileToLoad = isAutumnalLabEnabled() ? new File("aut/tsc_list.txt") : new File("tsc_list.txt");
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(fileToLoad))) {
 			String line;
@@ -669,6 +886,7 @@ public class EditorConfigDialog extends JDialog {
 		if (cmd == null) return;
 		TscCommandData data = tscCommands.get(cmd);
 		if (data != null) {
+			loadingTscDetails = true;
 			nameField.setText(data.name);
 			opsCombo.setSelectedItem(data.ops);
 			for (int i = 0; i < 6; i++) {
@@ -681,51 +899,31 @@ public class EditorConfigDialog extends JDialog {
 			abbField.setText(data.abb);
 			descArea.setText(data.desc);
 			updateIdComboStates();
+			loadingTscDetails = false;
 		}
 	}
 	
 	private void saveTscCommandDetails() {
+		if (loadingTscDetails) return;
 		String cmd = tscCommandList.getSelectedValue();
 		if (cmd == null) return;
-		
+
+		TscCommandData data = tscCommands.get(cmd);
+		if (data == null) return;
+
 		String name = nameField.getText().trim();
 		int ops = (Integer) opsCombo.getSelectedItem();
 		String abb = abbField.getText().trim();
 		String desc = descArea.getText().trim();
-		
-		if (name.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Name cannot be empty!", "HEY, DUDE!", JOptionPane.ERROR_MESSAGE);
-			return;
+
+		if (!name.isEmpty()) data.name = name;
+		data.ops = ops;
+		for (int i = 0; i < 6; i++) {
+			data.ids[i] = (String) idCombos[i].getSelectedItem();
 		}
-		if (abb.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Abbreviation cannot be empty!", "HEY, DUDE!", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		if (desc.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Description cannot be empty!", "HEY, DUDE!", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		
-		for (int i = 0; i < ops; i++) {
-			String idType = (String) idCombos[i].getSelectedItem();
-			if (idType == null || idType.equals("None")) {
-				JOptionPane.showMessageDialog(this, "All ID types for the specified number of ops must be set!", "HEY, DUDE!", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-		}
-		
-		TscCommandData data = tscCommands.get(cmd);
-		if (data != null) {
-			data.name = name;
-			data.ops = ops;
-			for (int i = 0; i < 6; i++) {
-				data.ids[i] = (String) idCombos[i].getSelectedItem();
-			}
-			data.abb = abb;
-			data.desc = desc;
-			
-			JOptionPane.showMessageDialog(this, "Command updated!");
-		}
+		data.abb = abb;
+		data.desc = desc;
+		markRestartRequired();
 	}
 	
 	private void updateIdComboStates() {
@@ -824,8 +1022,6 @@ public class EditorConfigDialog extends JDialog {
 			saveSimpleList("endlist.txt", endListModel);
 			saveSimpleList("mapBosses.txt", mapBossListModel);
 			saveSimpleList("backgroundTypes.txt", bgTypeListModel);
-			
-			JOptionPane.showMessageDialog(this, "All changes saved successfully!");
 		} catch (IOException e) {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(this, "Error saving changes: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -852,9 +1048,11 @@ public class EditorConfigDialog extends JDialog {
 		
 		List<String> sortedCommands = new ArrayList<>(tscCommands.keySet());
 		Collections.sort(sortedCommands);
+		boolean autMode = isAutumnalLabEnabled();
+		File targetFile = autMode ? new File("aut/tsc_list.txt") : new File("tsc_list.txt");
+		if (autMode) targetFile.getParentFile().mkdirs();
 		
 		List<String> header = new ArrayList<>();
-		File targetFile = new File("tsc_list.txt");
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(targetFile))) {
 			String line;
@@ -919,7 +1117,41 @@ public class EditorConfigDialog extends JDialog {
 			}
 		}
 	}
-	
+	private static TscCommandData copyTscCommandData(TscCommandData src) {
+		TscCommandData copy = new TscCommandData();
+		copy.name = src.name;
+		copy.ops  = src.ops;
+		copy.ids  = Arrays.copyOf(src.ids, src.ids.length);
+		copy.abb  = src.abb;
+		copy.desc = src.desc;
+		return copy;
+	}
+
+	private void snapshotOriginalState() {
+		tscCommandsSnapshot = new LinkedHashMap<>();
+		for (Map.Entry<String, TscCommandData> e : tscCommands.entrySet()) {
+			tscCommandsSnapshot.put(e.getKey(), copyTscCommandData(e.getValue()));
+		}
+		musicListSnapshot = new ArrayList<>();
+		for (int i = 0; i < musicListModel.size(); i++) musicListSnapshot.add(musicListModel.get(i));
+		sfxListSnapshot = new ArrayList<>();
+		for (int i = 0; i < sfxListModel.size(); i++) sfxListSnapshot.add(sfxListModel.get(i));
+	}
+
+	private void restoreOriginalState() {
+		tscCommands.clear();
+		tscListModel.clear();
+		for (Map.Entry<String, TscCommandData> e : tscCommandsSnapshot.entrySet()) {
+			tscCommands.put(e.getKey(), copyTscCommandData(e.getValue()));
+			tscListModel.addElement(e.getKey());
+		}
+		musicListModel.clear();
+		for (String s : musicListSnapshot) musicListModel.addElement(s);
+		sfxListModel.clear();
+		for (String s : sfxListSnapshot) sfxListModel.addElement(s);
+		requiresRestart = false;
+	}
+
 	private static class TscCommandData {
 		String name;
 		int ops;

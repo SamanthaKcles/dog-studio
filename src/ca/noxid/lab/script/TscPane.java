@@ -3,6 +3,7 @@ package ca.noxid.lab.script;
 import ca.noxid.lab.BlConfig;
 import ca.noxid.lab.Changeable;
 import ca.noxid.lab.EditorApp;
+import ca.noxid.lab.EditorConfigDialog;
 import ca.noxid.lab.Messages;
 import ca.noxid.lab.gameinfo.GameInfo;
 import ca.noxid.lab.mapdata.Mapdata;
@@ -93,7 +94,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		exeDat = inf;
 		rm = iMan;
 		mapNum = num;
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
 		}
 		saveSource = exeDat.getConfig().getUseScriptSource();
@@ -117,7 +118,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			ResourceManager iMan) {
 		rm = iMan;
 		exeDat = inf;
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
 		}
 		File dir = exeDat.getDataDirectory();
@@ -708,11 +709,11 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 				dirName = directions[fArgNum];
 			}
 			JLabel dirLabel = new JLabel(dirName);
-			dirLabel.setForeground(new Color(255, 150, 215));
+			dirLabel.setForeground(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg());
 			dirLabel.setOpaque(true);
-			dirLabel.setBackground(new Color(60, 60, 80));
+			dirLabel.setBackground(ca.noxid.lab.ThemeDialog.getCurrentTscTagBg());
 			dirLabel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(255, 150, 215), 1),
+				BorderFactory.createLineBorder(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg(), 1),
 				BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 			dirLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			dirLabel.setToolTipText("Direction");
@@ -754,11 +755,11 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 					mapList.add(i + " - " + allMaps[i].getMapname());
 				}
 				JLabel mapLabel = new JLabel(mapList.get(Math.max(0, Math.min(fArgNum, allMaps.length - 1))));
-				mapLabel.setForeground(new Color(255, 150, 215));
+				mapLabel.setForeground(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg());
 				mapLabel.setOpaque(true);
-				mapLabel.setBackground(new Color(60, 60, 80));
+				mapLabel.setBackground(ca.noxid.lab.ThemeDialog.getCurrentTscTagBg());
 				mapLabel.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(255, 150, 215), 1),
+					BorderFactory.createLineBorder(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg(), 1),
 					BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 				mapLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 				mapLabel.setToolTipText("Select Maps");
@@ -796,11 +797,11 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			java.util.List<String> formattedMusic = new ArrayList<>();
 			for (int i = 0; i < musicList.size(); i++) formattedMusic.add(i + ": " + musicList.get(i).trim());
 			JLabel musicLabel = new JLabel(formattedMusic.get(Math.max(0, Math.min(fArgNum, musicList.size() - 1))));
-			musicLabel.setForeground(new Color(255, 150, 215));
+			musicLabel.setForeground(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg());
 			musicLabel.setOpaque(true);
-			musicLabel.setBackground(new Color(60, 60, 80));
+			musicLabel.setBackground(ca.noxid.lab.ThemeDialog.getCurrentTscTagBg());
 			musicLabel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(255, 150, 215), 1),
+				BorderFactory.createLineBorder(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg(), 1),
 				BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 			musicLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			musicLabel.setToolTipText("Select Song");
@@ -818,11 +819,11 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			java.util.List<String> formattedSfx = new ArrayList<>();
 			for (int i = 0; i < sfxList.size(); i++) formattedSfx.add(i + ": " + sfxList.get(i).trim());
 			JLabel sfxLabel = new JLabel(formattedSfx.get(Math.max(0, Math.min(fArgNum, sfxList.size() - 1))));
-			sfxLabel.setForeground(new Color(255, 150, 215));
+			sfxLabel.setForeground(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg());
 			sfxLabel.setOpaque(true);
-			sfxLabel.setBackground(new Color(60, 60, 80));
+			sfxLabel.setBackground(ca.noxid.lab.ThemeDialog.getCurrentTscTagBg());
 			sfxLabel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(255, 150, 215), 1),
+				BorderFactory.createLineBorder(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg(), 1),
 				BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 			sfxLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			sfxLabel.setToolTipText("Select Sound Effect");
@@ -854,11 +855,11 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			}
 			final int equipSelIdx = eSelIdx;
 			JLabel equipLabel = new JLabel(formattedEquip.get(eSelIdx));
-			equipLabel.setForeground(new Color(255, 150, 215));
+			equipLabel.setForeground(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg());
 			equipLabel.setOpaque(true);
-			equipLabel.setBackground(new Color(60, 60, 80));
+			equipLabel.setBackground(ca.noxid.lab.ThemeDialog.getCurrentTscTagBg());
 			equipLabel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(255, 150, 215), 1),
+				BorderFactory.createLineBorder(ca.noxid.lab.ThemeDialog.getCurrentTscTagFg(), 1),
 				BorderFactory.createEmptyBorder(2, 4, 2, 4)));
 			equipLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			equipLabel.setToolTipText("Select Equip");
@@ -1214,35 +1215,56 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		SimpleAttributeSet newStyle;
 		String fontFamily = "Monospaced";
 
+		boolean light = ca.noxid.lab.ThemeDialog.isCurrentThemeLight();
+		Color bg        = light ? Color.white          : null;
+		Color cEvent    = light ? Color.black           : new Color(255, 205, 120);
+		Color cSbEvent  = light ? Color.ORANGE          : new Color(255, 200, 100);
+		Color cTag      = light ? Color.blue            : new Color(105, 220, 250);
+		Color cNum      = light ? Color.decode("0xC42F63") : new Color(255, 150, 215);
+		Color cFlag     = light ? Color.decode("0x8B00C2") : new Color(195, 170, 255);
+		Color cSpacer   = light ? Color.GRAY            : new Color(218, 188, 154);
+		Color cTxt      = light ? Color.black           : new Color(250, 250, 250);
+		Color cSbFlags  = light ? Color.decode("0xFF6060") : new Color(255, 120, 120);
+		Color cString   = light ? Color.decode("0xE0A11A") : new Color(220, 190, 80);
+		Color cComment  = light ? Color.decode("0x367A2A") : new Color(60, 160, 30);
+		Color cOver     = light ? Color.red             : new Color(255, 60, 60);
+		Color bgOver    = light ? Color.gray            : new Color(70, 50, 50);
+		Color cUnknown  = light ? Color.red             : new Color(255, 60, 60);
+		Color bgUnknown = light ? Color.gray            : new Color(70, 50, 50);
+
 		//event numbers
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(255, 205, 120));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cEvent);
 		StyleConstants.setBold(newStyle, true);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_EVENT, newStyle);
 		//speech bubble
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(255, 200, 100));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cSbEvent);
 		StyleConstants.setBold(newStyle, true);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_SBEVENT, newStyle);
 		//tsc tags
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(105, 220, 250));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cTag);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_TAG, newStyle);
 		//numbers
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(255, 150, 215));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cNum);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_NUM, newStyle);
@@ -1250,40 +1272,44 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		newStyle = new SimpleAttributeSet();
 		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(195, 170, 255));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cFlag);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_FLAG, newStyle);
 		//number spacer
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(218, 188, 154));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cSpacer);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_SPACER, newStyle);
 		//text
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(250, 250, 250));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cTxt);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_TXT, newStyle);
 		//speech bubble flags
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(255, 120, 120));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cSbFlags);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_SBFLAGS, newStyle);
 		//overlimit text
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setBackground(newStyle, new Color(70, 50, 50));
-		StyleConstants.setForeground(newStyle, new Color(255, 60, 60));
+		StyleConstants.setBackground(newStyle, bgOver);
+		StyleConstants.setForeground(newStyle, cOver);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_OVER, newStyle);
@@ -1291,15 +1317,17 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		newStyle = new SimpleAttributeSet();
 		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(220, 190, 80));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cString);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_STRING, newStyle);
-		//inaccessible commands
+		//comments
 		newStyle = new SimpleAttributeSet();
-		StyleConstants.setFontFamily(newStyle, fontFamily); //$NON-NLS-1$
+		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setForeground(newStyle, new Color(60, 160, 30));
+		if (bg != null) StyleConstants.setBackground(newStyle, bg);
+		StyleConstants.setForeground(newStyle, cComment);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, true);
 		retVal.put(STYLE_COMMENT, newStyle);
@@ -1307,8 +1335,8 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		newStyle = new SimpleAttributeSet();
 		StyleConstants.setFontFamily(newStyle, fontFamily);
 		StyleConstants.setFontSize(newStyle, 12);
-		StyleConstants.setBackground(newStyle, new Color(70, 50, 50));
-		StyleConstants.setForeground(newStyle, new Color(255, 60, 60));
+		StyleConstants.setBackground(newStyle, bgUnknown);
+		StyleConstants.setForeground(newStyle, cUnknown);
 		StyleConstants.setBold(newStyle, false);
 		StyleConstants.setItalic(newStyle, false);
 		retVal.put(STYLE_UNKNOWN, newStyle);
@@ -1443,19 +1471,31 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		if (!warnings.isEmpty()) {
 			String fileName = scriptFile != null ? scriptFile.getName() : "?";
 			StringBuilder msg = new StringBuilder();
+			boolean warnErrors = EditorConfigDialog.isWarnScriptErrors();
+			boolean warnUnknown = EditorConfigDialog.isWarnUnrecognizedCommands();
+			List<String> filteredWarnings = new ArrayList<>();
 			for (String w : warnings) {
-				msg.append("Warning! ").append(fileName).append(": ").append(w).append("\n");
+				if (w.contains("is not a recognized command")) {
+					if (warnUnknown) filteredWarnings.add(w);
+				} else {
+					if (warnErrors) filteredWarnings.add(w);
+				}
 			}
-			Toolkit.getDefaultToolkit().beep();
-			JOptionPane pane = new JOptionPane(msg.toString(), JOptionPane.WARNING_MESSAGE,
-					JOptionPane.YES_NO_OPTION, null, new Object[]{"Save Anyway", "Don't Save"}, "Don't Save");
-			JDialog dialog = pane.createDialog(null, "Script Warnings");
-			dialog.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
-			dialog.pack();
-			Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-			dialog.setLocation((screen.width - dialog.getWidth()) / 2, (screen.height - dialog.getHeight()) / 2);
-			dialog.setVisible(true);
-			if (!"Save Anyway".equals(pane.getValue())) return;
+			if (!filteredWarnings.isEmpty()) {
+				for (String w : filteredWarnings) {
+					msg.append("Warning! ").append(fileName).append(": ").append(w).append("\n");
+				}
+				Toolkit.getDefaultToolkit().beep();
+				JOptionPane pane = new JOptionPane(msg.toString(), JOptionPane.WARNING_MESSAGE,
+						JOptionPane.YES_NO_OPTION, null, new Object[]{"Save Anyway", "Don't Save"}, "Don't Save");
+				JDialog dialog = pane.createDialog(null, "Script Warnings");
+				dialog.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.pack();
+				Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+				dialog.setLocation((screen.width - dialog.getWidth()) / 2, (screen.height - dialog.getHeight()) / 2);
+				dialog.setVisible(true);
+				if (!"Save Anyway".equals(pane.getValue())) return;
+			}
 		}
 		try {
 			//save source
@@ -1896,15 +1936,20 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			return;
 			// do not mark changed if we just used the save shortcut
 			case KeyEvent.VK_S: {
-			if (justSaved) {
-				justSaved = false;
-				return;
+				if (justSaved) {
+					justSaved = false;
+					return;
+				}
 			}
-		}
-			// do not mark changed if we used Ctrl+A (doesn't work)
+			// do not mark changed if we used Ctrl+A
 			case KeyEvent.VK_A: {
-			if (evt.getKeyCode() == KeyEvent.VK_CONTROL)
-				return;
+				if (evt.isControlDown())
+					return;
+			}
+			// do not mark changed if we used Ctrl+C
+			case KeyEvent.VK_C: {
+				if (evt.isControlDown())
+					return;
 			}
 		}
 		int cPos = area.getCaretPosition();

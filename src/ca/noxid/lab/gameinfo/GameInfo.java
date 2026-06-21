@@ -1,6 +1,7 @@
 package ca.noxid.lab.gameinfo;
 import ca.noxid.lab.BlConfig;
 import ca.noxid.lab.EditorApp;
+import ca.noxid.lab.EditorConfigDialog;
 import ca.noxid.lab.FileSuffixFilter;
 import ca.noxid.lab.Messages;
 import ca.noxid.lab.entity.EntityData;
@@ -33,7 +34,7 @@ public class GameInfo {
 			"//Contributors: Wistil (cannibalized CE's entity list)\r\n" +
 			"//		Noxid (most of entities 0-180 & some more)\r\n" +
 			"//		Carrotlord (rects for entities 180+)\r\n" + 
-			"//     Bombchu Link (updated and refreshed framarects.)\r\n";
+			"//     Bombchu Link (updated and refreshed framerects.)\r\n";
 	
 	public BlConfig getConfig() {return gameConfig;}
 	
@@ -64,6 +65,9 @@ public class GameInfo {
 	private File armsImageFile;
 	private File faceFile;
 	private File itemImageFile;
+	private File autumnObjectsFile;
+	private File autumnItemsFile;
+	private File autumnCharactersFile;
 	
 	//getter and setter
 	public File getDataDirectory() {return dataDir;}
@@ -82,6 +86,9 @@ public class GameInfo {
 	public File getArmsImageFile() {return armsImageFile;}
 	public File getFaceFile() {return faceFile;}
 	public File getItemImageFile() {return itemImageFile;}
+	public File getAutumnObjectsFile() {return autumnObjectsFile;}
+	public File getAutumnItemsFile() {return autumnItemsFile;}
+	public File getAutumnCharactersFile() {return autumnCharactersFile;}
 	
 	public enum MOD_TYPE {MOD_CS, MOD_KS, MOD_CS_PLUS, MOD_MR, MOD_GUXT, DUMMY}
 	public MOD_TYPE type;
@@ -179,6 +186,11 @@ public class GameInfo {
 		faceFile = ResourceManager.checkBase(faceFile);
 		armsImageFile = new File(dataDir + "/ArmsImage" + imageExtension); //$NON-NLS-1$
 		armsImageFile = ResourceManager.checkBase(armsImageFile);
+		if (EditorConfigDialog.isAutumnalLabEnabled()) {
+			autumnObjectsFile = ResourceManager.checkBase(new File(dataDir + "/Npc/NpcAutumnObj" + imageExtension)); //$NON-NLS-1$
+			autumnItemsFile   = ResourceManager.checkBase(new File(dataDir + "/Autumn" + imageExtension)); //$NON-NLS-1$
+			autumnCharactersFile = ResourceManager.checkBase(new File(dataDir + "/Npc/NpcAutumnChar" + imageExtension)); //$NON-NLS-1$
+		}
 		loadNpcTbl(ResourceManager.checkBase(new File(dataDir + "/npc.tbl"))); //$NON-NLS-1$
 	}
 	
@@ -347,6 +359,9 @@ public class GameInfo {
 		iMan.reloadImage(itemImageFile, 1);
 		iMan.reloadImage(faceFile, 1);
 		iMan.reloadImage(armsImageFile, 1);
+		if (autumnObjectsFile != null)   iMan.reloadImage(autumnObjectsFile, 1);
+		if (autumnItemsFile != null)     iMan.reloadImage(autumnItemsFile, 1);
+		if (autumnCharactersFile != null) iMan.reloadImage(autumnCharactersFile, 1);
 	}
 	
 	public String[] getMapNames() {
@@ -617,7 +632,10 @@ public class GameInfo {
 			
 			
 			//now read supplementary info from metadata file
-			Scanner sc = new Scanner(new File("entityInfo.txt")); //$NON-NLS-1$
+			File entityInfoFile = EditorConfigDialog.isAutumnalLabEnabled()
+					? new File("aut/entityInfo.txt") //$NON-NLS-1$
+					: new File("entityInfo.txt"); //$NON-NLS-1$
+			Scanner sc = new Scanner(entityInfoFile);
 			int lineNum = 0;
 			while (sc.hasNextLine()) {
 				String line = sc.nextLine();
@@ -676,8 +694,8 @@ public class GameInfo {
 						}
 						lineScan.close();
 					} catch (Exception err) {
-						StrTools.msgBox("Error parsing EntityInfo.txt at line:"+lineNum);
-						System.err.println("Error parsing EntityInfo.txt at line:"+lineNum);
+						StrTools.msgBox("Error parsing entityInfo.txt at line:"+lineNum);
+						System.err.println("Error parsing entityInfo.txt at line:"+lineNum);
 						System.err.println(line);
 						err.printStackTrace();
 					}
@@ -828,8 +846,12 @@ public class GameInfo {
 	}
 	
 	public void saveEntityInfo() {
-		File infoFile = new File("entityInfo.txt");
-		File backup = new File("entityInfo_backup.txt");
+		boolean autMode = EditorConfigDialog.isAutumnalLabEnabled();
+		File infoFile = autMode ? new File("aut/entityInfo.txt") : new File("entityInfo.txt"); //$NON-NLS-1$ //$NON-NLS-2$
+		File backup   = autMode ? new File("aut/entityInfo_backup.txt") : new File("entityInfo_backup.txt"); //$NON-NLS-1$ //$NON-NLS-2$
+		if (autMode) {
+			infoFile.getParentFile().mkdirs();
+		}
 		if (!backup.exists()) {
 			infoFile.renameTo(backup);
 		}
@@ -1236,15 +1258,16 @@ public class GameInfo {
 	}
 	
 	private void copyMapFiles(Mapdata src, Mapdata dest) {
-		//pxm, pxe, tsc
-		String[] extArray = {".pxm", ".pxe", ".tsc"}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		String[] extArray = EditorConfigDialog.isAutumnalLabEnabled()
+				? new String[]{".pxm", ".pxe", ".tsc", ".cpxe"} //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+				: new String[]{".pxm", ".pxe", ".tsc"}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		File srcf, destf;
 		
 		try {
 			for (String s : extArray) {
 				srcf = new File(dataDir + "/Stage/" + src.getFile() + s); //$NON-NLS-1$
 				destf = new File(dataDir + "/Stage/" + dest.getFile() + s); //$NON-NLS-1$
-				copyFile(srcf, destf);
+				if (srcf.exists()) copyFile(srcf, destf);
 			}
 		} catch (IOException err) {
 			StrTools.msgBox(Messages.getString("GameInfo.44")); //$NON-NLS-1$
@@ -1622,6 +1645,9 @@ public class GameInfo {
 			foundFiles.add(new File(dataDir + "/Stage/" + m.getFile() + ".pxm"));
 			foundFiles.add(new File(dataDir + "/Stage/" + m.getFile() + ".pxe"));
 			foundFiles.add(new File(dataDir + "/Stage/" + m.getFile() + ".tsc"));
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				foundFiles.add(new File(dataDir + "/Stage/" + m.getFile() + ".cpxe")); //$NON-NLS-1$
+			}
 		}
 		
 		return foundFiles;

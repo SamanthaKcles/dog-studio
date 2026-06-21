@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
@@ -15,58 +16,111 @@ import java.util.HashMap;
 public class ResourceManager {
 	private HashMap<File, BufferedImage> imgMap;
 	private HashMap<File, byte[]> pxaMap;
+
 	public static final String rsrcTiles = "tiles.png";
 	public static final String rsrcBackdrop = "backdrop.png";
 	public static final String rsrcSplash1 = "splash_c1.png";
 	public static final String rsrcSplash2 = "splash_c2.png";
 	public static final String rsrcSplashMid = "splash_mid.png";
-	public static final String rsrcBgWhite = "bgwhite.png";
-	public static final String rsrcBgWhite2 = "bgwhite2.png";
-	public static final String rsrcBgBlue = "bgblue.png";
-	public static final String rsrcBgBrown = "Brown.png";
+	public static final String rsrcBgWhite = "maplist.png";
+	public static final String rsrcBgWhite2 = "projectconfig.png";
+	public static final String rsrcBgBlue = "tscdataentity.png";
+	public static final String rsrcBgBrown = "tilebg.png";
 	public static final String rsrcCorner = "corner.png";
-	
-	public static final String rsrcCursor = "weed_cursor.png";
+
+	public static final String rsrcCursor = "cursor.png";
 	public static final Cursor cursor = makeCursor();
-	
-	private static Cursor makeCursor() {
-		Image cim;
+
+	public static File getInstallDir() {
 		try {
-			cim = ImageIO.read(ResourceManager.class.getResource(rsrcCursor));
-			return Toolkit.getDefaultToolkit().createCustomCursor(cim, new Point(0,0), "weed");
-		} catch (IOException e) {
-			e.printStackTrace();
+			URI src = ResourceManager.class.getProtectionDomain()
+					.getCodeSource().getLocation().toURI();
+			File f = new File(src);
+			return f.isFile() ? f.getParentFile() : f;
+		} catch (Exception e) {
+			return null;
 		}
-		return null;
 	}
-	
+
+	public static File getExternalThemesDir() {
+		File base = getInstallDir();
+		return base == null ? null : new File(base, "themes");
+	}
+
+	public static File getExternalThemeId() {
+		File themesDir = getExternalThemesDir();
+		return themesDir == null ? null : new File(themesDir, "themeid.txt");
+	}
+
+	public static File getExternalThemeDir(String themeId) {
+		File themesDir = getExternalThemesDir();
+		return themesDir == null ? null : new File(themesDir, themeId);
+	}
+
+	public static File getExternalThemeInfo(String themeId) {
+		File themeDir = getExternalThemeDir(themeId);
+		return themeDir == null ? null : new File(themeDir, "themesinfo.txt");
+	}
+
+	public static InputStream openThemedResource(String themeId, String resourceName) throws IOException {
+		File extDir = getExternalThemeDir(themeId);
+		if (extDir != null) {
+			File extFile = new File(extDir, resourceName);
+			if (extFile.exists()) {
+				return new FileInputStream(extFile);
+			}
+		}
+		String jarPath = themeId + "/" + resourceName;
+		InputStream is = ResourceManager.class.getResourceAsStream(jarPath);
+		if (is != null) return is;
+		return ResourceManager.class.getResourceAsStream(resourceName);
+	}
+
+	private static Cursor makeCursor() {
+		try {
+			String theme = EditorApp.getTheme();
+			InputStream is = openThemedResource(theme, rsrcCursor);
+			if (is == null) return null;
+			Image cim = ImageIO.read(is);
+			is.close();
+			return Toolkit.getDefaultToolkit().createCustomCursor(cim, new Point(0, 0), "custom");
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	private static final String[] jarImgs = {
 		rsrcTiles,
-		rsrcBackdrop, //$NON-NLS-1$
-		rsrcSplash1, //$NON-NLS-1$
-		rsrcSplash2, //$NON-NLS-1$
-		rsrcSplashMid, //$NON-NLS-1$
-		rsrcBgWhite, //$NON-NLS-1$
-		rsrcBgWhite2, //$NON-NLS-1$
-		rsrcBgBlue, //$NON-NLS-1$
-		rsrcBgBrown, //$NON-NLS-1$
-		rsrcCorner, //$NON-NLS-1$
+		rsrcBackdrop,
+		rsrcSplash1,
+		rsrcSplash2,
+		rsrcSplashMid,
+		rsrcBgWhite,
+		rsrcBgWhite2,
+		rsrcBgBlue,
+		rsrcBgBrown,
+		rsrcCorner,
 	};
 	public ResourceManager() {
 		imgMap = new HashMap<>();
 		pxaMap = new HashMap<>();
+		loadThemedImages();
+	}
+
+	private void loadThemedImages() {
+		String theme = EditorApp.getTheme();
 		try {
 			for (String s : jarImgs) {
-				String ss = s;
-				if (EditorApp.blazed) ss = "weed_" + ss;
-				InputStream is = ResourceManager.class.getResourceAsStream(ss);
-				imgMap.put(new File(s), ImageIO.read(is));
-				is.close();
+				InputStream is = openThemedResource(theme, s);
+				if (is != null) {
+					imgMap.put(new File(s), ImageIO.read(is));
+					is.close();
+				}
 			}
 		} catch (IOException e) {
-			StrTools.msgBox(Messages.getString("ResourceManager.2") + //$NON-NLS-1$
-					Messages.getString("ResourceManager.3") + //$NON-NLS-1$
-					Messages.getString("ResourceManager.4")); //$NON-NLS-1$
+			StrTools.msgBox(Messages.getString("ResourceManager.2") +
+					Messages.getString("ResourceManager.3") +
+					Messages.getString("ResourceManager.4"));
 			e.printStackTrace();
 		}
 	}
@@ -281,21 +335,7 @@ public class ResourceManager {
 			b.flush();
 		}
 		imgMap.clear();
-		//load default rsrsc
-		try {
-			for (String s : jarImgs) {
-				String ss = s;
-				if (EditorApp.blazed) ss = "weed_" + ss;
-				InputStream is = ResourceManager.class.getResourceAsStream(ss);
-				imgMap.put(new File(s), ImageIO.read(is));
-				is.close();
-			}
-		} catch (IOException e) {
-			StrTools.msgBox(Messages.getString("ResourceManager.2") + //$NON-NLS-1$
-					Messages.getString("ResourceManager.3") + //$NON-NLS-1$
-					Messages.getString("ResourceManager.4")); //$NON-NLS-1$
-			e.printStackTrace();
-		}
+		loadThemedImages();
 		pxaMap.clear();
 	}
 	

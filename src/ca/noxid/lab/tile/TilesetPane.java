@@ -1,7 +1,6 @@
 package ca.noxid.lab.tile;
 
 import ca.noxid.lab.EditorApp;
-import ca.noxid.lab.Messages;
 import ca.noxid.lab.mapdata.MapInfo;
 import ca.noxid.lab.rsrc.ResourceManager;
 
@@ -13,172 +12,11 @@ import java.awt.image.BufferedImage;
 
 public class TilesetPane extends JPanel {
 
-	private static final String[] tileNames = {
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.2"), Messages.getString("TilesetPane.3"),
-			Messages.getString("TilesetPane.3"), Messages.getString("TilesetPane.5"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			Messages.getString("TilesetPane.0"), Messages.getString("TilesetPane.0"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			Messages.getString("TilesetPane.33"), Messages.getString("TilesetPane.33"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.65"),
-			Messages.getString("TilesetPane.66"), Messages.getString("TilesetPane.67"),
-			Messages.getString("TilesetPane.68"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.70"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.80"), Messages.getString("TilesetPane.81"),
-			Messages.getString("TilesetPane.82"), Messages.getString("TilesetPane.83"),
-			Messages.getString("TilesetPane.84"), Messages.getString("TilesetPane.85"),
-			Messages.getString("TilesetPane.86"), Messages.getString("TilesetPane.87"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.96"), Messages.getString("TilesetPane.97"),
-			Messages.getString("TilesetPane.98"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.100"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.112"), Messages.getString("TilesetPane.113"),
-			Messages.getString("TilesetPane.114"), Messages.getString("TilesetPane.115"),
-			Messages.getString("TilesetPane.116"), Messages.getString("TilesetPane.117"),
-			Messages.getString("TilesetPane.118"), Messages.getString("TilesetPane.119"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.128"), Messages.getString("TilesetPane.129"),
-			Messages.getString("TilesetPane.130"), Messages.getString("TilesetPane.131"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.160"), Messages.getString("TilesetPane.161"),
-			Messages.getString("TilesetPane.162"), Messages.getString("TilesetPane.163"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77"),
-			Messages.getString("TilesetPane.77"), Messages.getString("TilesetPane.77")
-			//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$ //$NON-NLS-12$ //$NON-NLS-13$ //$NON-NLS-14$ //$NON-NLS-15$ //$NON-NLS-16$
-	};
-
 	private static final long serialVersionUID = -4160450343759615331L;
 	public static Color bgCol = Color.DARK_GRAY;
 	ResourceManager iMan;
-	//private File pxaFile;
-	//private File tileset;
 	MapInfo dataHolder;
 	JPopupMenu popup;
-	JLabel tileidLabel = new JLabel("dummy");
-	int popTileX;
-	int popTileY;
 	int selectionX, selectionY;
 	int selectionW, selectionH;
 	int maxTilesX, maxTilesY;
@@ -205,10 +43,15 @@ public class TilesetPane extends JPanel {
 
 		//setup popup menu
 		popup = new JPopupMenu();
-		TileTypePane ttp = new TileTypePane();
-		popup.add(tileidLabel);
-		popup.add(ttp);
-		popup.add(ttp.getLabel());
+		JMenuItem editPxaItem = new JMenuItem("Edit .pxa");
+		editPxaItem.addActionListener(e -> {
+			Frame ownerFrame = (Frame) SwingUtilities.getWindowAncestor(TilesetPane.this);
+			PxaEditorDialog dlg = new PxaEditorDialog(ownerFrame, dataHolder, iMan);
+			dlg.setVisible(true);
+			TilesetPane.this.repaint();
+			parent.repaint();
+		});
+		popup.add(editPxaItem);
 	}
 
 	public void setTileBounds() {
@@ -344,9 +187,6 @@ public class TilesetPane extends JPanel {
 			selectionX = eve.getX() / scale;
 			selectionY = eve.getY() / scale;
 			if (eve.isPopupTrigger()) {
-				popTileX = selectionX;
-				popTileY = selectionY;
-				tileidLabel.setText("Tile #" + (popTileY * (maxTilesX + 1) + popTileX));
 				popup.show(eve.getComponent(), eve.getX(), eve.getY());
 				return;
 			}
@@ -367,16 +207,9 @@ public class TilesetPane extends JPanel {
 
 		@Override
 		public void mouseReleased(MouseEvent eve) {
-			int scale = (int) (dataHolder.getConfig().getTileSize() * EditorApp.tilesetScale);
-			int currentX = eve.getX() / scale;
-			int currentY = eve.getY() / scale;
 			if (eve.isPopupTrigger()) {
-				popTileX = currentX;
-				popTileY = currentY;
-				tileidLabel.setText("Tile #" + (popTileY * (maxTilesX + 1) + popTileX));
 				popup.show(eve.getComponent(), eve.getX(), eve.getY());
 			}
-
 		}
 
 		@Override
@@ -416,80 +249,4 @@ public class TilesetPane extends JPanel {
 		}
 	}
 
-	private class TileTypePane extends JPanel {
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = -1485121541731376313L;
-		JLabel typeLabel;
-
-		TileTypePane() {
-			typeLabel = new JLabel(Messages.getString("TilesetPane.273")); //$NON-NLS-1$
-			this.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseClicked(MouseEvent eve) {
-					TilesetPane parent = (TilesetPane) popup.getInvoker();
-					int sc = 16;
-					int selX = eve.getX() / sc;
-					if (selX < 0 || selX >= 0x10) {
-						popup.setVisible(false);
-						return;
-					}
-					int selY = eve.getY() / sc;
-					if (selY < 0 || selY >= 0x10) {
-						popup.setVisible(false);
-						return;
-					}
-					byte[] pxaData = iMan.getPxa(dataHolder.getPxa());
-					if (pxaData == null) {
-						popup.setVisible(false);
-						return;
-					}
-					pxaData[popTileY * 0x10 + popTileX] = (byte) (selY * 0x10 + selX);
-					parent.parent.dataHolder.markChanged();
-					parent.repaint();
-					//parent.parent.redraw();
-					parent.parent.repaint();
-					popup.setVisible(false);
-				}
-			});
-			this.addMouseMotionListener(new MouseAdapter() {
-				int prvX = 0;
-				int prvY = 0;
-
-				@Override
-				public void mouseMoved(MouseEvent eve) {
-					int currentX = eve.getX() / 16;
-					int currentY = eve.getY() / 16;
-					if (currentX != prvX || currentY != prvY) {
-						typeLabel.setText(Messages.getString("TilesetPane.274") + String.format("%X",
-								(currentY * 0x10 + currentX)) + " - " + tileNames[currentY * 0x10 + currentX]); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-						typeLabel.repaint();
-						prvX = currentX;
-						prvY = currentY;
-					}
-				}
-			});
-			BufferedImage tilesImg = iMan.getImg(ResourceManager.rsrcTiles); //$NON-NLS-1$
-			this.setPreferredSize(new Dimension(tilesImg.getWidth(), tilesImg.getHeight()));
-		}
-
-		public Component getLabel() {
-			return typeLabel;
-		}
-
-		public void paint(Graphics g) {
-			this.setBackground(Color.black);
-			super.paint(g);
-			g.drawImage(iMan.getImg(ResourceManager.rsrcTiles), //$NON-NLS-1$
-					0,
-					0,
-					this);
-			//twice b/c the image is pre-transparented
-			g.drawImage(iMan.getImg(ResourceManager.rsrcTiles), //$NON-NLS-1$
-					0,
-					0,
-					this);
-		}
-	}
 }

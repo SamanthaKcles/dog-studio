@@ -1,7 +1,46 @@
+// =====================
+// = TABLE OF CONTENTS =
+// =====================
+
+// Imports
+// About
+	// Getters and setters
+// Begin fuctions
+	// Build the window
+	// Get/set preferences
+	// Write window sizes
+// Keybinds
+// Theme
+// Add components to pane
+// Init helper windows
+// Map list right-click menu
+// Titlebar menus
+	// Titlebar > File
+	// Titlebar > View
+	// Titlebar > Actions
+	// Titlebar > Editor
+	// Titlebar > Help
+// Setup the ops panel
+	// Set up the "Tile" operations panel
+	// Set up the "Entity" operations panel
+	// Set up the "Script" operations panel
+	// Set up the "Mapdata" operations panel
+// Listen for changes (mark modified)
+// Method adds a new map tab to the thing
+// Map list right-click menu (continued)
+// Load mod
+// Switch perspective
+// Closing tabs
+// Docking/undocking windows
+
+// Imports
+
 package ca.noxid.lab;
 
 import ca.noxid.lab.entity.EntityData;
 import ca.noxid.lab.entity.EntityPane;
+import ca.noxid.lab.entity.EntitySettingsPanel;
+import ca.noxid.lab.entity.NpcRectDialog;
 import ca.noxid.lab.entity.NpcTblEditor;
 import ca.noxid.lab.gameinfo.*;
 import ca.noxid.lab.mapdata.MapInfo;
@@ -18,6 +57,7 @@ import ca.noxid.lab.tile.TilesetPane;
 import ca.noxid.uiComponents.*;
 import com.carrotlord.string.StrTools;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
@@ -44,12 +84,14 @@ import java.util.prefs.Preferences;
 public class EditorApp extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -2975049719856443233L;
 
+	// About
+
 	private static final boolean disable_logging = true;
 	public static boolean blazed = false;
 
 	// about dialog
 	private static final String VER_NUM = ""; //$NON-NLS-1$
-	private static final String TITLE_STR = "Dawg Studio" + VER_NUM;
+	private static final String TITLE_STR = "Dog Studio" + VER_NUM;
 	private static final String ABOUT_STR = Messages.getString("EditorApp.1") + VER_NUM + "\n" + //$NON-NLS-1$ //$NON-NLS-2$
 			"By Noxid, Autumn, Enlight, Sam & K, and Open Source Contributors - 4/14/2026\n" + //$NON-NLS-1$
 			Messages.getString("EditorApp.4") + //$NON-NLS-1$
@@ -69,20 +111,23 @@ public class EditorApp extends JFrame implements ActionListener {
 	// private static final String PREF_TILESIZE = "tilesize"; <16 or 32>
 	private static final String PREF_DIR = "last_directory"; //$NON-NLS-1$
 	private static final String PREF_RECENT = "recent_files";
-	private static final int MAX_RECENT = 5;
+	private static final int MAX_RECENT = 10;
 	private static final String PREF_TILE_ZOOM = "tileset_zoom"; //$NON-NLS-1$
 	private static final String PREF_MAP_ZOOM = "map_zoom"; //$NON-NLS-1$
 	private static final String PREF_TILE_COL = "tileset_background_colour"; //$NON-NLS-1$
 	private static final String PREF_HELPER = "helper_window_visible"; //$NON-NLS-1$
 	private static final String PREF_SCRIPT = "script_window_visible"; //$NON-NLS-1$
-	private static final String PREF_NOTES = "notes_text"; //$NON-NLS-1$
 	private static final String PREF_COM = "tsc_show_commands"; //$NON-NLS-1$
 	private static final String PREF_ENTITY = "entity_list_window_visible"; //$NON-NLS-1$
 	private static final String PREF_SCRIPT_DOCKED = "script_docked";
 	private static final String PREF_MISC = "misc_display_options"; //$NON-NLS-1$
 	private static final String PREF_SPRITE_SCALE = "sprite_scale"; //$NON-NLS-1$
+	private static final String PREF_THEME = "theme"; //$NON-NLS-1$
+	private static final String DEFAULT_THEME = "default"; //$NON-NLS-1$
+	private static final String PREF_EDITOR_MODE = "editor_mode"; //$NON-NLS-1$
+	private static final String PREF_EDITOR_BITMAP_MODE = "editor_bitmap_mode"; //$NON-NLS-1$
 
-	// F1-F4 ( think)
+	// F1-F4 (I think)
 	public static final String PERSPECTIVE_TILE = "Tile"; //$NON-NLS-1$
 	public static final String PERSPECTIVE_ENTITY = "Entity"; //$NON-NLS-1$
 	public static final String PERSPECTIVE_TSC = "Script"; //$NON-NLS-1$
@@ -104,12 +149,11 @@ public class EditorApp extends JFrame implements ActionListener {
 	private JDialog entityWindow;
 	private boolean showEntityWindow;
 	private JDialog npcTblWindow;
+	private NpcRectDialog npcRectWindow;
 	private JFrame helpWindow;
 	private JTabbedPane scriptTabs;
 	private Set<TscPane> standaloneScripts = new HashSet<>();
-	private JTextPane notes;
 	private JTextField tscSearch;
-	private String notesText = Messages.getString("EditorApp.19"); //$NON-NLS-1$
 	private Vector<AbstractButton> buttonsToEnableOnProjectLoad = new Vector<>();
 	private Vector<AbstractButton> buttonsToEnableOnExeLoad = new Vector<>();
 
@@ -128,6 +172,7 @@ public class EditorApp extends JFrame implements ActionListener {
 	public static Logger logger;
 
 	private GameInfo exeData;
+	private static EditorApp instance;
 
 	// drawing related maybe?
 	public static int NUM_LAYER;
@@ -171,6 +216,8 @@ public class EditorApp extends JFrame implements ActionListener {
 	private JList<String> categoryList;
 	private JList<String> subcatList;
 	private String entitySearchQuery = ""; // joexyz
+	private EntitySettingsPanel entitySettingsPanel;
+	private String mapSearchQuery = "";
 
 	/*
 	 * Getters and setters
@@ -214,15 +261,79 @@ public class EditorApp extends JFrame implements ActionListener {
 		return exeData;
 	}
 
-	private static Icon getAboutIcon() {
+	public static String getTheme() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.get(PREF_THEME, DEFAULT_THEME);
+	}
+	
+	public static void setTheme(String theme) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.put(PREF_THEME, theme);
+	}
 
-		java.net.URL iconURL;
-		if (blazed) {
-			iconURL = EditorApp.class.getResource("rsrc/weed_aboutIcon.png"); //$NON-NLS-1$
-		} else {
-			iconURL = EditorApp.class.getResource("rsrc/aboutIcon.png"); //$NON-NLS-1$
+	public static void restartApplication() {
+		if (instance != null) instance.setPrefs();
+		try {
+			Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+			int savedMode       = prefs.getInt(PREF_EDITOR_MODE, 0);
+			int savedBitmapMode = prefs.getInt(PREF_EDITOR_BITMAP_MODE, 0);
+
+			String javaExe = ProcessHandle.current().info().command()
+					.orElse(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+
+			String classPath;
+			try {
+				java.net.URI src = EditorApp.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+				classPath = new File(src).getAbsolutePath();
+			} catch (Exception ignored) {
+				classPath = System.getProperty("java.class.path");
+			}
+
+			List<String> cmd = new ArrayList<>();
+			cmd.add(javaExe);
+			cmd.add("-cp");
+			cmd.add(classPath);
+			cmd.add(EditorApp.class.getName());
+			if (savedMode != 0)       cmd.add("MODE=" + savedMode);
+			if (savedBitmapMode != 0) cmd.add("BITMAPMODE=" + savedBitmapMode);
+
+			new ProcessBuilder(cmd)
+					.inheritIO()
+					.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+			StrTools.msgBox("Could not restart. Sowwwy");
+			return;
 		}
-		return new ImageIcon(iconURL, "meow"); //$NON-NLS-1$
+		System.exit(0);
+	}
+
+	private static Image loadThemedImage(String filename) {
+		try {
+			InputStream is = ResourceManager.openThemedResource(getTheme(), filename);
+			if (is == null) return null;
+			Image img = ImageIO.read(is);
+			is.close();
+			return img;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static ImageIcon loadThemedIcon(String filename) {
+		try {
+			InputStream is = ResourceManager.openThemedResource(getTheme(), filename);
+			if (is == null) return new ImageIcon();
+			Image img = ImageIO.read(is);
+			is.close();
+			return img != null ? new ImageIcon(img) : new ImageIcon();
+		} catch (Exception e) {
+			return new ImageIcon();
+		}
+	}
+
+	private static Icon getAboutIcon() {
+		return loadThemedIcon("aboutIcon.png");
 	}
 
 	/*
@@ -230,13 +341,7 @@ public class EditorApp extends JFrame implements ActionListener {
 	 */
 	EditorApp() {
 
-		// blazed
-		if (!new File("nofun").exists()) {
-			Calendar cal = Calendar.getInstance();
-			if (new File("weed").exists() || cal.get(Calendar.MONTH) == Calendar.APRIL && cal.get(Calendar.DAY_OF_MONTH) == 20)
-				blazed = true;
-		}
-
+		instance = this;
 		// setups
 		if (EDITOR_MODE == 2) {
 			NUM_LAYER = 6;
@@ -248,18 +353,12 @@ public class EditorApp extends JFrame implements ActionListener {
 
 		// Build the window
 		this.setTitle(""); //$NON-NLS-1$
-		java.net.URL iconURL;
-		if (blazed) {
-			iconURL = EditorApp.class.getResource("rsrc/weed_AppIcon.png"); //$NON-NLS-1$
-			BlSound.playSample(EditorApp.class.getResource("rsrc/weew.wav"));
-			BlSound.playSample(EditorApp.class.getResource("rsrc/dr_dre-the_next_episode.mid"));
+		Image icon = loadThemedImage("AppIcon.png");
+		if (icon != null) this.setIconImage(icon);
+		playThemeStartup();
+		if (ResourceManager.cursor != null) {
 			this.setCursor(ResourceManager.cursor);
-		} else {
-			iconURL = EditorApp.class.getResource("rsrc/AppIcon.png"); //$NON-NLS-1$
-			BlSound.playSample(EditorApp.class.getResource("rsrc/weew.wav"));
 		}
-		Image icon = Toolkit.getDefaultToolkit().createImage(iconURL);
-		this.setIconImage(icon);
 		// build the UI
 		JSplitPane topLevelPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		addComponentsToPane(topLevelPane);
@@ -359,7 +458,7 @@ public class EditorApp extends JFrame implements ActionListener {
 	 * @return false if save was aborted
 	 */
 	public boolean saveAll(boolean shouldClose) {
-		// try to save all tabs
+		// Try to save all tabs
 		if (shouldClose) {
 			while (mapTabs.getTabCount() != 0) {
 				if (!closeCurrentTab()) {
@@ -396,6 +495,7 @@ public class EditorApp extends JFrame implements ActionListener {
 		return true;
 	}
 
+	// Get/set preferences
 	private void getPrefs() {
 		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
 		// DEFAULT_TILE_SIZE = prefs.getInt(PREF_TILESIZE, 16);
@@ -406,7 +506,6 @@ public class EditorApp extends JFrame implements ActionListener {
 		showTileWindow = prefs.getBoolean(PREF_HELPER, false);
 		showScriptWindow = prefs.getBoolean(PREF_SCRIPT, true);
 		showEntityWindow = prefs.getBoolean(PREF_ENTITY, false);
-		notesText = prefs.get(PREF_NOTES, Messages.getString("EditorApp.49")); //$NON-NLS-1$
 		showingCommands = prefs.getBoolean(PREF_COM, true);
 
 		int miscDrawOpts = prefs.getInt(PREF_MISC, 0);
@@ -434,7 +533,6 @@ public class EditorApp extends JFrame implements ActionListener {
 			prefs.putBoolean(PREF_HELPER, showTileWindow);
 			prefs.putBoolean(PREF_SCRIPT, showScriptWindow);
 			prefs.putBoolean(PREF_ENTITY, showEntityWindow);
-			prefs.put(PREF_NOTES, notes.getText());
 			prefs.putBoolean(PREF_COM, showingCommands);
 			int misc = 0;
 			for (int i = 0; i < otherDrawOpts.length; i++) {
@@ -452,7 +550,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			prefs.put(PREF_RECENT, sb.toString());
 		}
 
-		// write window sizes
+		// Write window sizes
 		File rectFile = new File("editor.rect"); //$NON-NLS-1$
 		try {
 			BufferedWriter out = new BufferedWriter(new FileWriter(rectFile));
@@ -482,6 +580,8 @@ public class EditorApp extends JFrame implements ActionListener {
 			refreshCurrentMap();
 		}
 	}
+
+	// Keybinds
 
 	@SuppressWarnings("serial")
 	private void setGlobalKeyBindings(JComponent c) {
@@ -560,32 +660,50 @@ public class EditorApp extends JFrame implements ActionListener {
 		});
 	}
 
+	// Theme
+
+	private void applyUITheme() {
+		if (ThemeDialog.isCurrentThemeLight()) {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (Exception ignored) {}
+			return;
+		}
+		applyDarkTheme();
+	}
+
 	private void applyDarkTheme() {
 		// finally. dark mode boosters lab. its pretty metal, huh?
+		final Color bg         = ThemeDialog.getCurrentBg();
+		final Color bgLighter  = ThemeDialog.getCurrentBgLighter();
+		final Color bgField    = ThemeDialog.getCurrentBgField();
+		final Color fg         = ThemeDialog.getCurrentFg();
+		final Color fgBright   = ThemeDialog.getCurrentFgBright();
+		final Color selection  = ThemeDialog.getCurrentSelection();
+		final Color border     = ThemeDialog.getCurrentBorder();
+		final Color buttonBg   = ThemeDialog.getCurrentButtonBg();
+		final Color inactiveFg = ThemeDialog.getCurrentInactiveFg();
+		final Color scrollBar     = ThemeDialog.getCurrentScrollBar();
+		final Color scrollBg      = ThemeDialog.getCurrentScrollBg();
+		final Color scriptBg      = ThemeDialog.getCurrentScriptBg();
+		final Color panelOutline  = ThemeDialog.getCurrentPanelOutline();
+		final Color dividerCol    = ThemeDialog.getCurrentDividerCol();
+
 		MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme() {
-			protected ColorUIResource getPrimary1() { return new ColorUIResource(80, 80, 80); }
-			protected ColorUIResource getPrimary2() { return new ColorUIResource(75, 110, 175); }
-			protected ColorUIResource getPrimary3() { return new ColorUIResource(75, 110, 175); }
-			protected ColorUIResource getSecondary1() { return new ColorUIResource(80, 80, 80); }
-			protected ColorUIResource getSecondary2() { return new ColorUIResource(60, 63, 65); }
-			protected ColorUIResource getSecondary3() { return new ColorUIResource(43, 43, 43); }
-			protected ColorUIResource getBlack() { return new ColorUIResource(220, 220, 220); }
-			protected ColorUIResource getWhite() { return new ColorUIResource(60, 63, 65); }
+			protected ColorUIResource getPrimary1()   { return new ColorUIResource(border); }
+			protected ColorUIResource getPrimary2()   { return new ColorUIResource(selection); }
+			protected ColorUIResource getPrimary3()   { return new ColorUIResource(selection); }
+			protected ColorUIResource getSecondary1() { return new ColorUIResource(border); }
+			protected ColorUIResource getSecondary2() { return new ColorUIResource(bgLighter); }
+			protected ColorUIResource getSecondary3() { return new ColorUIResource(bg); }
+			protected ColorUIResource getBlack()      { return new ColorUIResource(fgBright); }
+			protected ColorUIResource getWhite()      { return new ColorUIResource(bgLighter); }
 		});
 		try {
 			UIManager.setLookAndFeel(new MetalLookAndFeel());
 		} catch (Exception ignored) {}
 
-		Color bg = new Color(43, 43, 43);
-		Color bgLighter = new Color(60, 63, 65);
-		Color bgField = new Color(69, 73, 74);
-		Color fg = new Color(187, 187, 187);
-		Color fgBright = new Color(220, 220, 220);
-		Color selection = new Color(75, 110, 175);
 		Color selectionFg = Color.WHITE;
-		Color border = new Color(80, 80, 80);
-		Color buttonBg = new Color(77, 80, 82);
-		Color inactiveFg = new Color(150, 120, 120);
 
 		UIManager.put("Panel.background", bg);
 		UIManager.put("Panel.foreground", fg);
@@ -625,10 +743,10 @@ public class EditorApp extends JFrame implements ActionListener {
 		UIManager.put("TextArea.caretForeground", fgBright);
 		UIManager.put("TextArea.selectionBackground", selection);
 		UIManager.put("TextArea.selectionForeground", selectionFg);
-		UIManager.put("TextPane.background", bgField);
+		UIManager.put("TextPane.background", scriptBg);
 		UIManager.put("TextPane.foreground", fgBright);
 		UIManager.put("TextPane.caretForeground", fgBright);
-		UIManager.put("EditorPane.background", bgField);
+		UIManager.put("EditorPane.background", scriptBg);
 		UIManager.put("EditorPane.foreground", fgBright);
 		UIManager.put("FormattedTextField.background", bgField);
 		UIManager.put("FormattedTextField.foreground", fgBright);
@@ -665,40 +783,44 @@ public class EditorApp extends JFrame implements ActionListener {
 		UIManager.put("Menu.foreground", fg);
 		UIManager.put("Menu.selectionBackground", selection);
 		UIManager.put("Menu.selectionForeground", selectionFg);
+		UIManager.put("Menu.border", BorderFactory.createEmptyBorder(2, 0, 2, 0));
 		UIManager.put("MenuItem.background", bgLighter);
 		UIManager.put("MenuItem.foreground", fg);
 		UIManager.put("MenuItem.disabledForeground", inactiveFg);
 		UIManager.put("MenuItem.selectionBackground", selection);
 		UIManager.put("MenuItem.selectionForeground", selectionFg);
 		UIManager.put("MenuItem.acceleratorForeground", inactiveFg);
+		UIManager.put("MenuItem.border", BorderFactory.createEmptyBorder(2, 0, 2, 0));
 		UIManager.put("CheckBoxMenuItem.background", bgLighter);
 		UIManager.put("CheckBoxMenuItem.foreground", fg);
 		UIManager.put("CheckBoxMenuItem.selectionBackground", selection);
 		UIManager.put("CheckBoxMenuItem.selectionForeground", selectionFg);
+		UIManager.put("CheckBoxMenuItem.border", BorderFactory.createEmptyBorder(2, 0, 2, 0));
 		UIManager.put("RadioButtonMenuItem.background", bgLighter);
 		UIManager.put("RadioButtonMenuItem.foreground", fg);
+		UIManager.put("RadioButtonMenuItem.border", BorderFactory.createEmptyBorder(2, 0, 2, 0));
 		UIManager.put("PopupMenu.background", bgLighter);
 		UIManager.put("PopupMenu.foreground", fg);
 		UIManager.put("PopupMenu.border", BorderFactory.createLineBorder(border));
-		UIManager.put("ScrollBar.background", bg);
-		UIManager.put("ScrollBar.foreground", buttonBg);
-		UIManager.put("ScrollBar.thumb", buttonBg);
+		UIManager.put("ScrollBar.background", scrollBg);
+		UIManager.put("ScrollBar.foreground", scrollBar);
+		UIManager.put("ScrollBar.thumb", scrollBar);
 		UIManager.put("ScrollBar.thumbDarkShadow", border);
 		UIManager.put("ScrollBar.thumbHighlight", bgLighter);
 		UIManager.put("ScrollBar.thumbShadow", border);
-		UIManager.put("ScrollBar.track", bg);
+		UIManager.put("ScrollBar.track", scrollBg);
 		UIManager.put("ScrollBar.trackHighlight", border);
 		UIManager.put("ScrollBar.shadow", border);
 		UIManager.put("ScrollBar.darkShadow", border);
 		UIManager.put("ScrollBar.highlight", bgLighter);
 		UIManager.put("ScrollPane.background", bg);
 		UIManager.put("ScrollPane.border", BorderFactory.createLineBorder(border));
-		UIManager.put("SplitPane.background", bgLighter);
+		UIManager.put("SplitPane.background", dividerCol);
 		UIManager.put("SplitPane.foreground", fg);
-		UIManager.put("SplitPane.dividerFocusColor", bgLighter);
+		UIManager.put("SplitPane.dividerFocusColor", dividerCol);
 		UIManager.put("SplitPane.shadow", border);
 		UIManager.put("SplitPane.darkShadow", border);
-		UIManager.put("SplitPane.highlight", bgLighter);
+		UIManager.put("SplitPane.highlight", dividerCol);
 		UIManager.put("SplitPane.border", BorderFactory.createEmptyBorder());
 		UIManager.put("SplitPaneDivider.border", BorderFactory.createEmptyBorder());
 		UIManager.put("SplitPaneDivider.draggingColor", selection);
@@ -739,8 +861,8 @@ public class EditorApp extends JFrame implements ActionListener {
 		UIManager.put("InternalFrame.inactiveTitleForeground", inactiveFg);
 		UIManager.put("control", bg);
 		UIManager.put("controlText", fg);
-		UIManager.put("controlHighlight", bgLighter);
-		UIManager.put("controlLtHighlight", bgLighter);
+		UIManager.put("controlHighlight", selection);
+		UIManager.put("controlLtHighlight", selection);
 		UIManager.put("controlShadow", border);
 		UIManager.put("controlDkShadow", border);
 		UIManager.put("text", fgBright);
@@ -779,19 +901,28 @@ public class EditorApp extends JFrame implements ActionListener {
 		UIManager.put("MenuBar.highlight", bgLighter);
 		UIManager.put("MenuBar.borderColor", border);
 		UIManager.put("MenuBar.border", BorderFactory.createMatteBorder(0, 0, 1, 0, border));
+
+		UIManager.put("ScrollBarUI", "javax.swing.plaf.basic.BasicScrollBarUI");
+		UIManager.put("ScrollBar.width", 12);
+		UIManager.put("ScrollBar.minimumThumbSize", new Dimension(20, 20));
+		UIManager.put("ScrollBar.maximumThumbSize", new Dimension(1000, 1000));
+		UIManager.put("ScrollBar.allowsAbsolutePositioning", Boolean.TRUE);
+		UIManager.put("SplitPaneUI", "javax.swing.plaf.basic.BasicSplitPaneUI");
 	}
+
+	// Add components to pane
 
 	private void addComponentsToPane(JSplitPane pane) {
 		// this causes crashes for some people.
 		// rather than solve it properly i'm just gonna make this hack to avoid it.
 		File lfOverride = new File("love.txt");
 		if (!lfOverride.exists()) {
-			applyDarkTheme();
+			applyUITheme();
 			SwingUtilities.updateComponentTreeUI(pane);
 			pane.setBorder(BorderFactory.createEmptyBorder());
 		}
 
-		// add the menus
+		// Add the menus
 		JMenuBar menuBar = new JMenuBar();
 
 		menuBar.add(buildFileMenu());
@@ -800,21 +931,21 @@ public class EditorApp extends JFrame implements ActionListener {
 		menuBar.add(buildEditorMenu());
 		menuBar.add(buildHelpMenu());
 
-		// add the whole menu now
+		// Add the whole menu now
 		this.setJMenuBar(menuBar);
 
-		// panel mania
+		// Panel mania
 		JPanel mainPanel = new JPanel(); // This panel holds the tabs, and the opsBar
 		JPanel mapsPanel = new JPanel(); // This panel holds the list of maps
 
-		// add the panels to the top level, ensuring the left panel gets any extra space
+		// Add the panels to the top level, ensuring the left panel gets any extra space
 
 		pane.add(mapsPanel);
 		pane.add(mainPanel);
 
-		// setup the main panel
+		// Setup the main panel
 		mainPanel.setLayout(new GridBagLayout());
-		mainPanel.setBackground(Color.decode("0x2b2b2b")); //$NON-NLS-1$
+		mainPanel.setBackground(ThemeDialog.getCurrentPanelColor());
 		GridBagConstraints c = new GridBagConstraints();
 		// using grid bag. For each component, create it, set instance variables to the
 		// contstraints, add
@@ -841,7 +972,7 @@ public class EditorApp extends JFrame implements ActionListener {
 		group.add(radioMapdata);
 		JPanel opsRadio = new JPanel();
 		opsRadio.setLayout(new GridBagLayout());
-		opsRadio.setBackground(Color.decode("0x2b2b2b")); //$NON-NLS-1$
+		opsRadio.setBackground(ThemeDialog.getCurrentPanelColor());
 		c.gridx = 0;
 		c.gridy = 0;
 		c.anchor = GridBagConstraints.WEST;
@@ -852,17 +983,17 @@ public class EditorApp extends JFrame implements ActionListener {
 		opsRadio.add(radioScript, c);
 		c.gridy++;
 		opsRadio.add(radioMapdata, c);
-		// constraints
+		// Constraints
 		c.gridx = 0;
 		c.gridy = 0;
 		c.anchor = GridBagConstraints.CENTER;
 		c.weighty = 0;
 		c.weightx = 0;
 		c.fill = GridBagConstraints.BOTH;
-		// add
+		// Add
 		mainPanel.add(opsRadio, c);
 
-		// constraints
+		// Constraints
 		c.gridy = 0;
 		c.gridx = 2;
 		c.gridheight = 1;
@@ -872,7 +1003,7 @@ public class EditorApp extends JFrame implements ActionListener {
 		c.weighty = 0;
 		mainPanel.add(buildOpsPanel(), c);
 
-		// setup the tabbed element
+		// Setup the tabbed element
 		mapTabs = new SplashTabPane(iMan.getImg(ResourceManager.rsrcSplash1), // $NON-NLS-1$
 				iMan.getImg(ResourceManager.rsrcSplash2), // $NON-NLS-1$
 				iMan.getImg(ResourceManager.rsrcSplashMid)); // $NON-NLS-1$
@@ -881,9 +1012,10 @@ public class EditorApp extends JFrame implements ActionListener {
 			@Override
 			public void stateChanged(ChangeEvent eve) {
 				if (suppressTabChange) return;
+				// Tileset window undocked
 				if (showTileWindow && mapTabs.getSelectedIndex() != -1 && activePerspective.equals(PERSPECTIVE_TILE)) {
 					// System.out.println("swapTile");
-					// add current tileset to helper
+					// Add current tileset to helper
 					TabOrganizer inf = componentVec.get(mapTabs.getSelectedIndex());
 					MapPane mapPanel = inf.map;
 					JScrollPane tileScroll = new JScrollPane(mapPanel.getTilePane());
@@ -893,16 +1025,23 @@ public class EditorApp extends JFrame implements ActionListener {
 					tileSplit.setDividerLocation(100);
 					tilesetWindow.setContentPane(tileSplit);
 					tilesetWindow.validate();
+					// Entity list undocked
 				} else if (showEntityWindow && mapTabs.getSelectedIndex() != -1
 						&& activePerspective.equals(PERSPECTIVE_ENTITY)) {
 					// System.out.println("swapEntity");
 					TabOrganizer inf = componentVec.get(mapTabs.getSelectedIndex());
 					JScrollPane listScroll = new JScrollPane(inf.getEntity().getEntityList());
 					JScrollPane editScroll = new JScrollPane(inf.getEntity().getEditPane());
+					editScroll.getVerticalScrollBar().setUnitIncrement(10);
 					JSplitPane windowSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editScroll, listScroll);
-					windowSplit.setDividerLocation(120);
+					windowSplit.setDividerLocation(110);
 					entityWindow.setContentPane(windowSplit);
 					entityWindow.validate();
+					entitySettingsPanel.rebind(inf.getEntity().getSelectionList());
+				} else if (!showEntityWindow && mapTabs.getSelectedIndex() != -1
+						&& activePerspective.equals(PERSPECTIVE_ENTITY)) {
+					TabOrganizer inf = componentVec.get(mapTabs.getSelectedIndex());
+					entitySettingsPanel.rebind(inf.getEntity().getSelectionList());
 				}
 				refreshCurrentMap();
 			}
@@ -924,22 +1063,36 @@ public class EditorApp extends JFrame implements ActionListener {
 				refreshCurrentMap();
 			}
 		});
-		// constraints
+		// Constraints
 		c.gridx = 0;
 		c.gridy = 1;
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.anchor = GridBagConstraints.FIRST_LINE_START;
 		c.weightx = 0;
 		c.weighty = 1.0;
-		// add
+		// Add
 		mapTabsContainer = new JPanel(new BorderLayout());
 		mapTabsContainer.add(mapTabs, BorderLayout.CENTER);
 		mainPanel.add(mapTabsContainer, c);
 
-		// setup the maps panel
-		mapsPanel.setBorder(BorderFactory.createLineBorder(new Color(80, 80, 80)));
+		// Setup the maps panel
+		mapsPanel.setBorder(BorderFactory.createLineBorder(ThemeDialog.getCurrentBorder()));
 		mapsPanel.setLayout(new BorderLayout(2, 2));
-		mapsPanel.add(new JLabel(Messages.getString("EditorApp.59")), BorderLayout.NORTH); //$NON-NLS-1$
+		JPanel mapNorthPanel = new JPanel(new BorderLayout(0, 2));
+		mapNorthPanel.add(new JLabel(Messages.getString("EditorApp.59")), BorderLayout.NORTH); //$NON-NLS-1$
+		JTextField mapSearchField = new JTextField("");
+		TextPrompt mapSearchPrompt = new TextPrompt("Filter Maps...", mapSearchField);
+		mapSearchPrompt.changeAlpha(0.5f);
+		mapSearchPrompt.changeStyle(Font.ITALIC);
+		mapSearchField.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent eve) {
+				mapSearchQuery = mapSearchField.getText();
+				refreshMapList();
+			}
+		});
+		mapNorthPanel.add(mapSearchField, BorderLayout.CENTER);
+		mapsPanel.add(mapNorthPanel, BorderLayout.NORTH);
 		mapList = new BgList<>(iMan.getImg(ResourceManager.rsrcBgWhite)); // $NON-NLS-1$
 		//
 		buildMapsPopup();
@@ -953,7 +1106,7 @@ public class EditorApp extends JFrame implements ActionListener {
 						addMapTab(destIndex);
 					} else {
 						exeData.moveMap(moveIndex, destIndex, EditorApp.this);
-						mapList.setListData(exeData.getMapNames());
+						refreshMapList();
 						movingMapdata = false;
 					}
 				}
@@ -1004,18 +1157,17 @@ public class EditorApp extends JFrame implements ActionListener {
 				}
 			}
 		});
-		JScrollPane mapScroll = new JScrollPane(mapList);
+		JScrollPane mapListScroll = new JScrollPane(mapList);
 		mapList.setMinimumSize(new Dimension(150, 400));
 		mapList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		mapScroll.setPreferredSize(new Dimension(150, 400));
-		mapScroll.setMaximumSize(new Dimension(200, 9001));
+		mapListScroll.setPreferredSize(new Dimension(150, 400));
+		mapListScroll.setMaximumSize(new Dimension(200, 9001));
 		// fix size horizontally
-		mapsPanel.add(mapScroll, BorderLayout.CENTER);
-		notes = new JTextPane();
-		notes.setText(notesText);
-		mapsPanel.add(notes, BorderLayout.SOUTH);
+		mapsPanel.add(mapListScroll, BorderLayout.CENTER);
 		pane.setDividerLocation(200); // 150 > 200; lets you see just a little more
 	}
+
+	// Init helper windows
 
 	private void initHelperWindows() {
 		tilesetWindow = new JDialog(this);
@@ -1207,13 +1359,15 @@ public class EditorApp extends JFrame implements ActionListener {
 			// do nothing
 		}
 
-		if (EditorApp.blazed) {
+		if (ResourceManager.cursor != null) {
 			tilesetWindow.setCursor(ResourceManager.cursor);
 			scriptWindow.setCursor(ResourceManager.cursor);
 			helpWindow.setCursor(ResourceManager.cursor);
 			entityWindow.setCursor(ResourceManager.cursor);
 		}
 	}
+
+	// Map list right-click menu
 
 	private JPopupMenu buildMapsPopup() {
 		// add listener things and popup menu
@@ -1266,91 +1420,9 @@ public class EditorApp extends JFrame implements ActionListener {
 		return mapPopup;
 	}
 
-	private JMenu buildViewMenu() {
-		JMenuItem menuItem;
-		JMenu opsMenu = new JMenu(Messages.getString("EditorApp.77")); //$NON-NLS-1$
+	// Titlebar menus
 
-		// populate the operations menu
-		JMenu tilesetScaleMenu = new JMenu(Messages.getString("EditorApp.78")); //$NON-NLS-1$
-		JMenu mapScaleMenu = new JMenu(Messages.getString("EditorApp.79")); //$NON-NLS-1$
-
-		for (int i = 0; i < SCALE_OPTIONS; i++) {
-			menuItem = new JMenuItem(SCALE_NAMES[i]);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand("tileset_scale_" + SCALE_NAMES[i]); //$NON-NLS-1$
-			tilesetScaleMenu.add(menuItem);
-		}
-		for (int i = 0; i < SCALE_OPTIONS; i++) {
-			menuItem = new JMenuItem(SCALE_NAMES[i]);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand("map_scale_" + SCALE_NAMES[i]); //$NON-NLS-1$
-			mapScaleMenu.add(menuItem);
-		}
-		opsMenu.add(tilesetScaleMenu);
-		opsMenu.add(mapScaleMenu);
-
-		JMenuItem pickCol = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = 22747309347145031L;
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				if (mapTabs.getComponentCount() <= 0) {
-					return;
-				}
-				TabOrganizer inf = componentVec.get(mapTabs.getSelectedIndex());
-				if (inf != null) {
-					MapPane map = inf.getMap();
-					Color newCol = JColorChooser.showDialog(map, Messages.getString("EditorApp.82"), TilesetPane.bgCol); //$NON-NLS-1$
-					if (newCol != null) {
-						TilesetPane.bgCol = newCol;
-						Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
-						prefs.put(PREF_TILE_COL, String.valueOf(TilesetPane.bgCol.getRGB()));
-						map.tilePane.repaint();
-					}
-				}
-			}
-
-		});
-		pickCol.setText(Messages.getString("EditorApp.83")); //$NON-NLS-1$
-		opsMenu.add(pickCol);
-
-		return opsMenu;
-	}
-
-	@SuppressWarnings("serial")
-	private JMenu buildEditorMenu() {
-		JMenuItem menuItem;
-		JMenu editorMenu = new JMenu("Editor");
-
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = -5667436162643974389L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				new EditorConfigDialog(EditorApp.this, iMan);
-			}
-		});
-		menuItem.setText("Editor Configuration");
-		editorMenu.add(menuItem);
-
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = 22747309347145031L;
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				airhorn();
-					new BlIniDialog(EditorApp.this, iMan.getImg(ResourceManager.rsrcBgWhite2));
-			}
-		});
-		menuItem.setText("Edit Project Config Settings");
-		menuItem.setEnabled(false);
-		this.buttonsToEnableOnProjectLoad.add(menuItem);
-		editorMenu.add(menuItem);
-
-		return editorMenu;
-	}
-
+	// Titlebar > File
 	private JMenu buildFileMenu() {
 		JMenuItem menuItem;
 		JMenu fileMenu = new JMenu(Messages.getString("EditorApp.84")); //$NON-NLS-1$
@@ -1525,89 +1597,82 @@ public class EditorApp extends JFrame implements ActionListener {
 		return fileMenu;
 	}
 
+	// Titlebar > View
+	private JMenu buildViewMenu() {
+		JMenuItem menuItem;
+		JMenu opsMenu = new JMenu(Messages.getString("EditorApp.77")); //$NON-NLS-1$
+
+		// populate the operations menu
+		JMenu tilesetScaleMenu = new JMenu(Messages.getString("EditorApp.78")); //$NON-NLS-1$
+		JMenu mapScaleMenu = new JMenu(Messages.getString("EditorApp.79")); //$NON-NLS-1$
+
+		for (int i = 0; i < SCALE_OPTIONS; i++) {
+			menuItem = new JMenuItem(SCALE_NAMES[i]);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand("tileset_scale_" + SCALE_NAMES[i]); //$NON-NLS-1$
+			tilesetScaleMenu.add(menuItem);
+		}
+		for (int i = 0; i < SCALE_OPTIONS; i++) {
+			menuItem = new JMenuItem(SCALE_NAMES[i]);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand("map_scale_" + SCALE_NAMES[i]); //$NON-NLS-1$
+			mapScaleMenu.add(menuItem);
+		}
+		opsMenu.add(tilesetScaleMenu);
+		opsMenu.add(mapScaleMenu);
+
+		JMenuItem pickCol = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = 22747309347145031L;
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (mapTabs.getComponentCount() <= 0) {
+					return;
+				}
+				TabOrganizer inf = componentVec.get(mapTabs.getSelectedIndex());
+				if (inf != null) {
+					MapPane map = inf.getMap();
+					Color newCol = JColorChooser.showDialog(map, Messages.getString("EditorApp.82"), TilesetPane.bgCol); //$NON-NLS-1$
+					if (newCol != null) {
+						TilesetPane.bgCol = newCol;
+						Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+						prefs.put(PREF_TILE_COL, String.valueOf(TilesetPane.bgCol.getRGB()));
+						map.tilePane.repaint();
+					}
+				}
+			}
+
+		});
+		pickCol.setText(Messages.getString("EditorApp.83")); //$NON-NLS-1$
+		opsMenu.add(pickCol);
+
+		return opsMenu;
+	}
+
+		// Titlebar > Actions
 	@SuppressWarnings("serial")
 	private JMenu buildActionMenu() {
 
 		JMenuItem menuItem;
 		JMenu ops = new JMenu(Messages.getString("EditorApp.99")); //$NON-NLS-1$
 		// populate
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = -5667436162643974389L;
 
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = 7412839056129384756L;
 			@Override
 			public void actionPerformed(ActionEvent eve) {
 				airhorn();
 				if (exeData != null) {
-					try {
-						exeData.generateFlagList();
-					} catch (IOException e) {
-						e.printStackTrace();
-						StrTools.msgBox(Messages.getString("EditorApp.41")); //$NON-NLS-1$
-					}
+					npcRectWindow.populate(exeData);
+					npcRectWindow.setVisible(true);
 				} else {
-					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
+					StrTools.msgBox(Messages.getString("EditorApp.113")); //$NON-NLS-1$
 				}
 			}
 		});
-		menuItem.setText(Messages.getString("EditorApp.100")); //$NON-NLS-1$
+		menuItem.setText("Create Rects");
 		menuItem.setEnabled(false);
 		this.buttonsToEnableOnProjectLoad.add(menuItem);
-		ops.add(menuItem);
-
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = -5667436162643974389L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				if (exeData != null) {
-					try {
-						exeData.generateTRAList();
-					} catch (IOException e) {
-						e.printStackTrace();
-						StrTools.msgBox(Messages.getString("EditorApp.41")); //$NON-NLS-1$
-					}
-				} else {
-					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
-				}
-			}
-		});
-		menuItem.setText(Messages.getString("EditorApp.101")); //$NON-NLS-1$
-		menuItem.setEnabled(false);
-		this.buttonsToEnableOnProjectLoad.add(menuItem);
-		ops.add(menuItem);
-
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = -4839459771566018919L;
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				airhorn();
-				showScriptWindow = !showScriptWindow;
-				scriptWindow.setVisible(showScriptWindow);
-			}
-		});
-		menuItem.setText(Messages.getString("EditorApp.102")); //$NON-NLS-1$
-		ops.add(menuItem);
-
-		menuItem = new JMenuItem(new AbstractAction() {
-			private static final long serialVersionUID = -5667436162643974389L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				if (exeData != null && exeData.canPatch()) {
-					JDialog patcher = new HexDialog(EditorApp.this, exeData);
-					patcher.dispose();
-				} else {
-					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
-				}
-			}
-		});
-		menuItem.setText(Messages.getString("EditorApp.104")); //$NON-NLS-1$
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
-		menuItem.setEnabled(false);
-		this.buttonsToEnableOnExeLoad.add(menuItem);
 		ops.add(menuItem);
 
 		menuItem = new JMenuItem(new AbstractAction() {
@@ -1631,31 +1696,21 @@ public class EditorApp extends JFrame implements ActionListener {
 		this.buttonsToEnableOnExeLoad.add(menuItem);
 		ops.add(menuItem);
 
+		// Toggle Script
 		menuItem = new JMenuItem(new AbstractAction() {
-			/**
-			 *
-			 */
-			private static final long serialVersionUID = -6692081319209085736L;
+			private static final long serialVersionUID = -4839459771566018919L;
 
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (exeData != null && exeData.canPatch()) {
-					try {
-						exeData.getExe().updateExcode();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-						StrTools.msgBox(Messages.getString("EditorApp.162")); //$NON-NLS-1$
-					}
-				} else {
-					StrTools.msgBox(Messages.getString("EditorApp.163")); //$NON-NLS-1$
-				}
+			public void actionPerformed(ActionEvent arg0) {
+				airhorn();
+				showScriptWindow = !showScriptWindow;
+				scriptWindow.setVisible(showScriptWindow);
 			}
 		});
-		menuItem.setText(Messages.getString("EditorApp.164")); //$NON-NLS-1$
-		menuItem.setEnabled(false);
-		this.buttonsToEnableOnExeLoad.add(menuItem);
+		menuItem.setText(Messages.getString("EditorApp.102")); //$NON-NLS-1$
 		ops.add(menuItem);
 
+		// Run Game
 		menuItem = new JMenuItem(new AbstractAction() {
 
 			@Override
@@ -1704,6 +1759,100 @@ public class EditorApp extends JFrame implements ActionListener {
 		menuItem.setEnabled(false);
 		this.buttonsToEnableOnProjectLoad.add(menuItem);
 		ops.add(menuItem);
+
+		// Misc submenu
+		JMenu miscMenu = new JMenu("Misc"); //$NON-NLS-1$
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = -5667436162643974389L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				if (exeData != null) {
+					try {
+						exeData.generateFlagList();
+					} catch (IOException e) {
+						e.printStackTrace();
+						StrTools.msgBox(Messages.getString("EditorApp.41")); //$NON-NLS-1$
+					}
+				} else {
+					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
+				}
+			}
+		});
+		menuItem.setText(Messages.getString("EditorApp.100")); //$NON-NLS-1$
+		menuItem.setEnabled(false);
+		this.buttonsToEnableOnProjectLoad.add(menuItem);
+		miscMenu.add(menuItem);
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = -5667436162643974389L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				if (exeData != null) {
+					try {
+						exeData.generateTRAList();
+					} catch (IOException e) {
+						e.printStackTrace();
+						StrTools.msgBox(Messages.getString("EditorApp.41")); //$NON-NLS-1$
+					}
+				} else {
+					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
+				}
+			}
+		});
+		menuItem.setText(Messages.getString("EditorApp.101")); //$NON-NLS-1$
+		menuItem.setEnabled(false);
+		this.buttonsToEnableOnProjectLoad.add(menuItem);
+		miscMenu.add(menuItem);
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = -5667436162643974389L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				if (exeData != null && exeData.canPatch()) {
+					JDialog patcher = new HexDialog(EditorApp.this, exeData);
+					patcher.dispose();
+				} else {
+					StrTools.msgBox(Messages.getString("EditorApp.103")); //$NON-NLS-1$
+				}
+			}
+		});
+		menuItem.setText(Messages.getString("EditorApp.104")); //$NON-NLS-1$
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
+		menuItem.setEnabled(false);
+		this.buttonsToEnableOnExeLoad.add(menuItem);
+		miscMenu.add(menuItem);
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			/**
+			 *
+			 */
+			private static final long serialVersionUID = -6692081319209085736L;
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (exeData != null && exeData.canPatch()) {
+					try {
+						exeData.getExe().updateExcode();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+						StrTools.msgBox(Messages.getString("EditorApp.162")); //$NON-NLS-1$
+					}
+				} else {
+					StrTools.msgBox(Messages.getString("EditorApp.163")); //$NON-NLS-1$
+				}
+			}
+		});
+		menuItem.setText(Messages.getString("EditorApp.164")); //$NON-NLS-1$
+		menuItem.setEnabled(false);
+		this.buttonsToEnableOnExeLoad.add(menuItem);
+		miscMenu.add(menuItem);
 
 		menuItem = new JMenuItem(new AbstractAction() {
 			@Override
@@ -1756,8 +1905,8 @@ public class EditorApp extends JFrame implements ActionListener {
 		menuItem.setText(Messages.getString("EditorApp.167"));
 		menuItem.setEnabled(false);
 		this.buttonsToEnableOnProjectLoad.add(menuItem);
-		ops.add(menuItem);
-		
+		miscMenu.add(menuItem);
+
 		// OOB Flag Dialog
 		menuItem = new JMenuItem(new AbstractAction() {
 			@Override
@@ -1767,11 +1916,61 @@ public class EditorApp extends JFrame implements ActionListener {
 			}
 		});
 		menuItem.setText(Messages.getString("EditorApp.168"));
-		ops.add(menuItem);
+		miscMenu.add(menuItem);
+
+		ops.add(miscMenu);
 
 		return ops;
 	}
 
+	// Titlebar > Editor
+	@SuppressWarnings("serial")
+	private JMenu buildEditorMenu() {
+		JMenuItem menuItem;
+		JMenu editorMenu = new JMenu("Editor");
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = -5667436162643974389L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				new EditorConfigDialog(EditorApp.this, iMan);
+			}
+		});
+		menuItem.setText("Editor Configuration");
+		editorMenu.add(menuItem);
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = 22747309347145031L;
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				airhorn();
+					new BlIniDialog(EditorApp.this, iMan.getImg(ResourceManager.rsrcBgWhite2));
+			}
+		});
+		menuItem.setText("Project Config");
+		menuItem.setEnabled(false);
+		this.buttonsToEnableOnProjectLoad.add(menuItem);
+		editorMenu.add(menuItem);
+
+		menuItem = new JMenuItem(new AbstractAction() {
+			private static final long serialVersionUID = -67L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				new ThemeDialog(EditorApp.this, iMan);
+			}
+		});
+		menuItem.setText("Themes");
+		editorMenu.add(menuItem);
+
+		return editorMenu;
+	}
+
+	// Titlebar > Help
 	private JMenu buildHelpMenu() {
 		JMenuItem menuItem;
 		JMenu help = new JMenu(Messages.getString("EditorApp.105")); //$NON-NLS-1$
@@ -1805,10 +2004,11 @@ public class EditorApp extends JFrame implements ActionListener {
 		return help;
 	}
 
-	// setup the ops panel
+	// Setup the ops panel
+
 	private JPanel buildOpsPanel() {
 		opsPanel = new JPanel(new CardLayout());
-		opsPanel.setBorder(BorderFactory.createLineBorder(new Color(80, 80, 80)));
+		opsPanel.setBorder(BorderFactory.createLineBorder(ThemeDialog.getCurrentPanelOutline()));
 
 		opsPanel.add(buildTileOps(), PERSPECTIVE_TILE);
 
@@ -1821,386 +2021,17 @@ public class EditorApp extends JFrame implements ActionListener {
 		return opsPanel;
 	}
 
-	// Set up the "Entity" panel
-	private JPanel buildEntityOps() {
-		// local vars for setting up ops panel
-		JPanel tempPanel;
-		JLabel kittyLabel;
-		java.net.URL kittenURL;
-		ImageIcon catImg;
-		GridBagConstraints c = new GridBagConstraints();
-		// ButtonGroup group;
-		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
-		// ActionListener oListen = new TileOpsListener();
-		c.anchor = GridBagConstraints.LINE_START;
-		if (blazed) {
-			kittenURL = EditorApp.class.getResource("rsrc/weed_EntityCat.gif"); //$NON-NLS-1$
-		} else {
-			kittenURL = EditorApp.class.getResource("rsrc/EntityCat.gif"); //$NON-NLS-1$
-		}
-		catImg = new ImageIcon(kittenURL, "pic"); //$NON-NLS-1$
-		kittyLabel = new JLabel(catImg);
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridheight = GridBagConstraints.BOTH;
-		c.weightx = 0;
-		tempPanel.add(kittyLabel, c);
-
-		c.weightx = 0.2;
-		c.gridx++;
-		// c.fill = GridBagConstraints.BOTH;
-		// categoryList = new JList(exeData.getEntityCategories());
-		categoryList = new BgList<>(iMan.getImg(ResourceManager.rsrcBgWhite)); // $NON-NLS-1$
-		subcatList = new BgList<>(iMan.getImg(ResourceManager.rsrcBgWhite)); // $NON-NLS-1$
-		categoryList.setPrototypeCellValue("Long Category"); //$NON-NLS-1$
-		subcatList.setPrototypeCellValue("Long Category Name"); //$NON-NLS-1$
-		JScrollPane catScroll = new JScrollPane(categoryList);
-		categoryList.addMouseListener(new MouseAdapter() {
-			@SuppressWarnings("unchecked")
-			@Override
-			public void mouseClicked(MouseEvent eve) {
-				if (exeData != null && eve.getClickCount() == 2) {
-					subcatList
-							.setListData(exeData.getEntitySubcat(((JList<String>) eve.getSource()).getSelectedValue()));
-				}
-			}
-		});
-		subcatList.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent eve) {
-				if (eve.getClickCount() == 2) {
-					int selected = EditorApp.this.mapTabs.getSelectedIndex();
-					if (selected != -1) {
-						TabOrganizer currentTab = componentVec.get(selected);
-						EntityPane ep = currentTab.getEntity();
-						Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
-								subcatList.getSelectedValue(), entitySearchQuery);
-						ep.getEntityList().setListData(eVec);
-					} // if there is a selected tab
-				} // if doubleclick
-			}
-		});
-
-		catScroll.setMinimumSize(new Dimension(120, 120));
-		tempPanel.add(catScroll, c);
-
-		c.gridx++;
-		// subcatList = new JList(exeData.getEntitySubcat("All"));
-		JScrollPane subcatScroll = new JScrollPane(subcatList);
-		subcatScroll.setMinimumSize(new Dimension(120, 120));
-		subcatScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		tempPanel.add(subcatScroll, c);
-
-		// npc.tbl editor button
-		npcTblWindow = new NpcTblEditor(this);
-		c.gridx++;
-		c.weightx = 0.2;
-		JButton npcTblButton = new JButton(new AbstractAction() {
-			private static final long serialVersionUID = 5301785830920994513L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				if (exeData != null) {
-					((NpcTblEditor) npcTblWindow).populate(exeData);
-					npcTblWindow.setVisible(true);
-				} else {
-					StrTools.msgBox(Messages.getString("EditorApp.113")); //$NON-NLS-1$
-				}
-			}
-		});
-		npcTblButton.setText(Messages.getString("EditorApp.114")); //$NON-NLS-1$
-		npcTblButton.setOpaque(false);
-		tempPanel.add(npcTblButton, c);
-		c.gridy = 0;
-		
-		// search (and size) panel
-		c.gridx++;
-		c.fill = GridBagConstraints.VERTICAL;
-		JPanel searchSizePanel = new JPanel();
-		searchSizePanel.setLayout(new BoxLayout(searchSizePanel, BoxLayout.Y_AXIS));
-		searchSizePanel.setBackground(new Color(0, 0, 0, 0));
-
-		final Dimension compSize = new Dimension(180, 30);
-
-		// entity search box
-		JTextField searchField = new JTextField("");
-		searchField.setPreferredSize(compSize);
-		searchField.setMinimumSize(compSize);
-		searchField.setMaximumSize(compSize);
-		searchField.setAlignmentX(Component.LEFT_ALIGNMENT);
-		searchField.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent eve) {
-				if (eve.getKeyCode() == KeyEvent.VK_ENTER) {
-					airhorn();
-					entitySearchQuery = searchField.getText();
-					int selected = EditorApp.this.mapTabs.getSelectedIndex();
-					if (selected != -1) {
-						TabOrganizer currentTab = componentVec.get(selected);
-						EntityPane ep = currentTab.getEntity();
-						Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
-								subcatList.getSelectedValue(), entitySearchQuery);
-						ep.getEntityList().setListData(eVec);
-						}
-					}
-				}
-			});
-		searchSizePanel.add(searchField);
-		searchSizePanel.add(Box.createVerticalStrut(4));
-
-		// entity search button
-		JButton searchButton = new JButton(new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				entitySearchQuery = searchField.getText();
-				int selected = EditorApp.this.mapTabs.getSelectedIndex();
-				if (selected != -1) {
-					TabOrganizer currentTab = componentVec.get(selected);
-					EntityPane ep = currentTab.getEntity();
-					Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
-							subcatList.getSelectedValue(), entitySearchQuery);
-					ep.getEntityList().setListData(eVec);
-				}
-			}
-		});
-		searchButton.setText("Search entities");
-		searchButton.setPreferredSize(compSize);
-		searchButton.setMinimumSize(compSize);
-		searchButton.setMaximumSize(compSize);
-		searchButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		searchSizePanel.add(searchButton);
-		searchSizePanel.add(Box.createVerticalStrut(8));
-
-		JLabel spriteSizeLabel = new JLabel("Sprite size:");
-		spriteSizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		searchSizePanel.add(spriteSizeLabel);
-		searchSizePanel.add(Box.createVerticalStrut(2));
-
-		JTextField spriteSizeField = new JTextField(String.valueOf(EditorApp.spriteScale));
-		spriteSizeField.setPreferredSize(compSize);
-		spriteSizeField.setMinimumSize(compSize);
-		spriteSizeField.setMaximumSize(compSize);
-		spriteSizeField.setAlignmentX(Component.LEFT_ALIGNMENT);
-		spriteSizeField.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent eve) {
-				if (eve.getKeyCode() == KeyEvent.VK_ENTER) {
-					try {
-						double val = Double.parseDouble(spriteSizeField.getText().trim());
-						if (val > 0) {
-							EditorApp.spriteScale = val;
-							airhorn();
-							refreshCurrentMap();
-						}
-					} catch (NumberFormatException ex) {
-
-					}
-				}
-			}
-		});
-		searchSizePanel.add(spriteSizeField);
-		searchSizePanel.add(Box.createVerticalStrut(4));
-
-		JButton setSizeButton = new JButton("Set size");
-		setSizeButton.setPreferredSize(compSize);
-		setSizeButton.setMinimumSize(compSize);
-		setSizeButton.setMaximumSize(compSize);
-		setSizeButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		setSizeButton.addActionListener(e -> {
-			try {
-				double val = Double.parseDouble(spriteSizeField.getText().trim());
-				if (val > 0) {
-					EditorApp.spriteScale = val;
-					airhorn();
-					refreshCurrentMap();
-				}
-			} catch (NumberFormatException ex) {
-			
-			}
-		});
-		searchSizePanel.add(setSizeButton);
-
-		tempPanel.add(searchSizePanel, c);
-
-		// buffer space
-		c.gridx++;
-		c.gridy = 0;
-		c.gridheight = GridBagConstraints.REMAINDER;
-		c.weightx = 0.8;
-		tempPanel.add(new JLabel(), c);
-
-		return tempPanel;
-	}
-
-	// Set up the "Script" panel
-	private JPanel buildScriptOps() {
-		// local vars for setting up ops panel
-		JPanel tempPanel;
-		JLabel kittyLabel;
-		java.net.URL kittenURL;
-		ImageIcon catImg;
-		GridBagConstraints c = new GridBagConstraints();
-		// ButtonGroup group;
-		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
-		// ActionListener oListen = new TileOpsListener();
-		c.anchor = GridBagConstraints.LINE_START;
-		if (blazed) {
-			kittenURL = EditorApp.class.getResource("rsrc/weed_ScriptCat.gif"); //$NON-NLS-1$
-		} else {
-			kittenURL = EditorApp.class.getResource("rsrc/ScriptCat.gif"); //$NON-NLS-1$
-		}
-		catImg = new ImageIcon(kittenURL, "pic"); //$NON-NLS-1$
-		kittyLabel = new JLabel(catImg);
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridheight = GridBagConstraints.REMAINDER;
-		c.weightx = 0;
-		tempPanel.add(kittyLabel, c);
-		c.gridheight = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.weightx = 0.5;
-		c.gridx++;
-		tscSearch = new JTextField(16);
-		tscSearch.setAction(new ScriptSearchAction());
-		tempPanel.add(tscSearch, c);
-		c.anchor = GridBagConstraints.WEST;
-		c.gridy++;
-		JButton findButton = new JButton(new ScriptSearchAction());
-		findButton.setOpaque(false);
-		findButton.setText(Messages.getString("EditorApp.117")); //$NON-NLS-1$
-		tempPanel.add(findButton, c);
-		c.gridx++;
-		c.gridy = 0;
-
-		ButtonGroup g = new ButtonGroup();
-		JRadioButton comButton = new JRadioButton(new AbstractAction() {
-			private static final long serialVersionUID = -6730103666544430394L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				showingCommands = true;
-				if (scriptDocked) {
-					rebuildMapTabsContainer();
-				} else if (TscPane.getComPanel() != null) {
-					JPanel p = new JPanel(new BorderLayout());
-					p.add(scriptTabs, BorderLayout.CENTER);
-					p.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
-					@SuppressWarnings("serial")
-					JButton btn = new JButton(new AbstractAction() {
-						@Override
-						public void actionPerformed(ActionEvent a) {
-							dockOrUndockScript();
-						}
-					});
-					btn.setText("Dock");
-					p.add(btn, BorderLayout.SOUTH);
-					scriptWindow.setContentPane(p);
-					scriptWindow.validate();
-				}
-			}
-		});
-		comButton.setOpaque(false);
-		comButton.setText(Messages.getString("EditorApp.118")); //$NON-NLS-1$
-		g.add(comButton);
-		comButton.setSelected(showingCommands);
-		tempPanel.add(comButton, c);
-		c.gridy++;
-		JRadioButton defButton = new JRadioButton(new AbstractAction() {
-			private static final long serialVersionUID = -6730103666544420394L;
-
-			@Override
-			public void actionPerformed(ActionEvent eve) {
-				airhorn();
-				showingCommands = false;
-				if (scriptDocked) {
-					rebuildMapTabsContainer();
-				} else {
-					JPanel p = new JPanel(new BorderLayout());
-					p.add(scriptTabs, BorderLayout.CENTER);
-					p.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
-					@SuppressWarnings("serial")
-					JButton btn = new JButton(new AbstractAction() {
-						@Override
-						public void actionPerformed(ActionEvent a) {
-							dockOrUndockScript();
-						}
-					});
-					btn.setText("Dock");
-					p.add(btn, BorderLayout.SOUTH);
-					scriptWindow.setContentPane(p);
-					scriptWindow.validate();
-				}
-			}
-		});
-		defButton.setOpaque(false);
-		defButton.setText(Messages.getString("EditorApp.119")); //$NON-NLS-1$
-		defButton.setSelected(!showingCommands);
-		g.add(defButton);
-		tempPanel.add(defButton, c);
-		c.gridx++;
-		c.gridy = 0;
-
-		/*
-		JButton flagButton = new JButton("Gen. Flag listing");
-		tempPanel.add(flagButton, c);
-		c.gridy++;
-		JButton traButton = new JButton("Gen. <TRA listing");
-		tempPanel.add(traButton, c);
-		c.gridx++;
-		c.gridy = 0;
-		*/
-
-		return tempPanel;
-	}
-
-	// Set up the "Mapdata" panel
-	private JPanel buildMapdataOps() {
-		// local vars for setting up ops panel
-		JPanel tempPanel;
-		JLabel kittyLabel;
-		java.net.URL kittenURL;
-		ImageIcon catImg;
-		GridBagConstraints c = new GridBagConstraints();
-		// ButtonGroup group;
-		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
-		// ActionListener oListen = new TileOpsListener();
-		c.anchor = GridBagConstraints.LINE_START;
-		if (blazed) {
-			kittenURL = EditorApp.class.getResource("rsrc/weed_MapdataCat.gif"); //$NON-NLS-1$
-		} else {
-			kittenURL = EditorApp.class.getResource("rsrc/MapdataCat.gif"); //$NON-NLS-1$
-		}
-		catImg = new ImageIcon(kittenURL, "pic"); //$NON-NLS-1$
-		kittyLabel = new JLabel(catImg);
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridheight = GridBagConstraints.REMAINDER;
-		c.weightx = 0;
-		tempPanel.add(kittyLabel, c);
-
-		return tempPanel;
-	}
-
 	// Set up the "Tile" operations panel
 	private JPanel buildTileOps() {
 		// local vars for setting up ops panel
 		JPanel tempPanel;
 		JLabel kittyLabel;
-		java.net.URL kittenURL;
 		ImageIcon catImg;
 		GridBagConstraints c = new GridBagConstraints();
 		ButtonGroup group;
 		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
 		c.anchor = GridBagConstraints.LINE_START;
-		// needs cats
-		if (blazed) {
-			kittenURL = EditorApp.class.getResource("rsrc/weed_TileCat.gif"); //$NON-NLS-1$
-		} else {
-			kittenURL = EditorApp.class.getResource("rsrc/TileCat.gif"); //$NON-NLS-1$
-		}
-		catImg = new ImageIcon(kittenURL, "pic"); //$NON-NLS-1$
+		catImg = loadThemedIcon("tile.gif");
 		kittyLabel = new JLabel(catImg);
 		c.gridx = 0;
 		c.gridy = 0;
@@ -2329,6 +2160,272 @@ public class EditorApp extends JFrame implements ActionListener {
 		return tempPanel;
 	}
 
+	// Set up the "Entity" panel
+	private JPanel buildEntityOps() {
+		// local vars for setting up ops panel
+		JPanel tempPanel;
+		GridBagConstraints c = new GridBagConstraints();
+		// ButtonGroup group;
+		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop));
+		// ActionListener oListen = new TileOpsListener();
+		c.anchor = GridBagConstraints.LINE_START;
+		c.insets = new Insets(0, 2, 0, 2);
+
+		ImageIcon catImg = loadThemedIcon("entity.gif");
+		JLabel kittyLabel = new JLabel(catImg);
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 0;
+		c.fill = GridBagConstraints.NONE;
+		tempPanel.add(kittyLabel, c);
+
+		npcTblWindow  = new NpcTblEditor(this);
+		npcRectWindow = new NpcRectDialog(this);
+		categoryList = new BgList<>(iMan.getImg(ResourceManager.rsrcBgWhite));
+		subcatList   = new BgList<>(iMan.getImg(ResourceManager.rsrcBgWhite));
+		categoryList.setPrototypeCellValue("Long Category");
+		subcatList.setPrototypeCellValue("Long Category Name");
+
+		entitySettingsPanel = new EntitySettingsPanel(iMan);
+		c.gridx = 1;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 0;
+		c.fill = GridBagConstraints.NONE;
+		tempPanel.add(entitySettingsPanel, c);
+
+		JPanel rightPanel = new BgPanel(null, iMan.getImg(ResourceManager.rsrcBackdrop));
+		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+		rightPanel.setBackground(new Color(0, 0, 0, 0));
+
+		final Dimension compSize = new Dimension(120, 26);
+
+		JButton npcTblButton = new JButton(new AbstractAction() {
+			private static final long serialVersionUID = 5301785830920994513L;
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				if (exeData != null) {
+					((NpcTblEditor) npcTblWindow).populate(exeData);
+					npcTblWindow.setVisible(true);
+				} else {
+					StrTools.msgBox(Messages.getString("EditorApp.113")); //$NON-NLS-1$
+				}
+			}
+		});
+		npcTblButton.setText(Messages.getString("EditorApp.114")); //$NON-NLS-1$
+		npcTblButton.setOpaque(false);
+		npcTblButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		rightPanel.add(npcTblButton);
+		rightPanel.add(Box.createVerticalStrut(4));
+
+		JLabel spriteSizeLabel = new JLabel("Sprite size:");
+		spriteSizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		rightPanel.add(spriteSizeLabel);
+		rightPanel.add(Box.createVerticalStrut(2));
+
+		JTextField spriteSizeField = new JTextField(String.valueOf(EditorApp.spriteScale));
+		spriteSizeField.setPreferredSize(compSize);
+		spriteSizeField.setMinimumSize(compSize);
+		spriteSizeField.setMaximumSize(compSize);
+		spriteSizeField.setAlignmentX(Component.LEFT_ALIGNMENT);
+		spriteSizeField.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent eve) {
+				if (eve.getKeyCode() == KeyEvent.VK_ENTER) {
+					try {
+						double val = Double.parseDouble(spriteSizeField.getText().trim());
+						if (val > 0) {
+							EditorApp.spriteScale = val;
+							airhorn();
+							refreshCurrentMap();
+						}
+					} catch (NumberFormatException ex) {
+					}
+				}
+			}
+		});
+		rightPanel.add(spriteSizeField);
+		rightPanel.add(Box.createVerticalStrut(4));
+
+		JButton setSizeButton = new JButton("Set size");
+		setSizeButton.setPreferredSize(compSize);
+		setSizeButton.setMinimumSize(compSize);
+		setSizeButton.setMaximumSize(compSize);
+		setSizeButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		setSizeButton.addActionListener(e -> {
+			try {
+				double val = Double.parseDouble(spriteSizeField.getText().trim());
+				if (val > 0) {
+					EditorApp.spriteScale = val;
+					airhorn();
+					refreshCurrentMap();
+				}
+			} catch (NumberFormatException ex) {
+			}
+		});
+		rightPanel.add(setSizeButton);
+
+		c.gridx = 2;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 0;
+		c.fill = GridBagConstraints.NONE;
+		c.anchor = GridBagConstraints.NORTHWEST;
+		tempPanel.add(rightPanel, c);
+
+		// buffer space
+		c.gridx = 3;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 1.0;
+		c.fill = GridBagConstraints.NONE;
+		tempPanel.add(new JLabel(), c);
+
+		return tempPanel;
+	}
+
+	// Set up the "Script" panel
+	private JPanel buildScriptOps() {
+		// local vars for setting up ops panel
+		JPanel tempPanel;
+		JLabel kittyLabel;
+		ImageIcon catImg;
+		GridBagConstraints c = new GridBagConstraints();
+		// ButtonGroup group;
+		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
+		// ActionListener oListen = new TileOpsListener();
+		c.anchor = GridBagConstraints.LINE_START;
+		catImg = loadThemedIcon("script.gif");
+		kittyLabel = new JLabel(catImg);
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 0;
+		tempPanel.add(kittyLabel, c);
+		c.gridheight = 1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.weightx = 0.5;
+		c.gridx++;
+		tscSearch = new JTextField(16);
+		tscSearch.setAction(new ScriptSearchAction());
+		tempPanel.add(tscSearch, c);
+		c.anchor = GridBagConstraints.WEST;
+		c.gridy++;
+		JButton findButton = new JButton(new ScriptSearchAction());
+		findButton.setOpaque(false);
+		findButton.setText(Messages.getString("EditorApp.117")); //$NON-NLS-1$
+		tempPanel.add(findButton, c);
+		c.gridx++;
+		c.gridy = 0;
+
+		ButtonGroup g = new ButtonGroup();
+		JRadioButton comButton = new JRadioButton(new AbstractAction() {
+			private static final long serialVersionUID = -6730103666544430394L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				showingCommands = true;
+				if (scriptDocked) {
+					rebuildMapTabsContainer();
+				} else if (TscPane.getComPanel() != null) {
+					JPanel p = new JPanel(new BorderLayout());
+					p.add(scriptTabs, BorderLayout.CENTER);
+					p.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
+					@SuppressWarnings("serial")
+					JButton btn = new JButton(new AbstractAction() {
+						@Override
+						public void actionPerformed(ActionEvent a) {
+							dockOrUndockScript();
+						}
+					});
+					btn.setText("Dock");
+					p.add(btn, BorderLayout.SOUTH);
+					scriptWindow.setContentPane(p);
+					scriptWindow.validate();
+				}
+			}
+		});
+		comButton.setOpaque(false);
+		comButton.setText(Messages.getString("EditorApp.118")); //$NON-NLS-1$
+		g.add(comButton);
+		comButton.setSelected(showingCommands);
+		tempPanel.add(comButton, c);
+		c.gridy++;
+		JRadioButton defButton = new JRadioButton(new AbstractAction() {
+			private static final long serialVersionUID = -6730103666544420394L;
+
+			@Override
+			public void actionPerformed(ActionEvent eve) {
+				airhorn();
+				showingCommands = false;
+				if (scriptDocked) {
+					rebuildMapTabsContainer();
+				} else {
+					JPanel p = new JPanel(new BorderLayout());
+					p.add(scriptTabs, BorderLayout.CENTER);
+					p.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
+					@SuppressWarnings("serial")
+					JButton btn = new JButton(new AbstractAction() {
+						@Override
+						public void actionPerformed(ActionEvent a) {
+							dockOrUndockScript();
+						}
+					});
+					btn.setText("Dock");
+					p.add(btn, BorderLayout.SOUTH);
+					scriptWindow.setContentPane(p);
+					scriptWindow.validate();
+				}
+			}
+		});
+		defButton.setOpaque(false);
+		defButton.setText(Messages.getString("EditorApp.119")); //$NON-NLS-1$
+		defButton.setSelected(!showingCommands);
+		g.add(defButton);
+		tempPanel.add(defButton, c);
+		c.gridx++;
+		c.gridy = 0;
+
+		/*
+		JButton flagButton = new JButton("Gen. Flag listing");
+		tempPanel.add(flagButton, c);
+		c.gridy++;
+		JButton traButton = new JButton("Gen. <TRA listing");
+		tempPanel.add(traButton, c);
+		c.gridx++;
+		c.gridy = 0;
+		*/
+
+		return tempPanel;
+	}
+
+	// Set up the "Mapdata" panel
+	private JPanel buildMapdataOps() {
+		// local vars for setting up ops panel
+		JPanel tempPanel;
+		JLabel kittyLabel;
+		ImageIcon catImg;
+		GridBagConstraints c = new GridBagConstraints();
+		// ButtonGroup group;
+		tempPanel = new BgPanel(new GridBagLayout(), iMan.getImg(ResourceManager.rsrcBackdrop)); // $NON-NLS-1$
+		// ActionListener oListen = new TileOpsListener();
+		c.anchor = GridBagConstraints.LINE_START;
+		catImg = loadThemedIcon("mapdata.gif");
+		kittyLabel = new JLabel(catImg);
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridheight = GridBagConstraints.REMAINDER;
+		c.weightx = 0;
+		tempPanel.add(kittyLabel, c);
+
+		return tempPanel;
+	}
+
+	// Listen for changes (mark modified)
+
 	public class TabOrganizer implements PropertyChangeListener, Changeable {
 		MapInfo data;
 		MapPane map;
@@ -2453,7 +2550,7 @@ public class EditorApp extends JFrame implements ActionListener {
 				String name = (String) eve.getNewValue();
 				mapTabs.setToolTipTextAt(mapTabs.getSelectedIndex(), name);
 				// attempt to update the list
-				mapList.setListData(exeData.getMapNames());
+				refreshMapList();
 				// attempt to update the TSC majig
 				String targetName = mapTabs.getTitleAt(mapTabs.getSelectedIndex());
 				for (int i = 0; i < scriptTabs.getComponentCount(); i++) {
@@ -2492,7 +2589,7 @@ public class EditorApp extends JFrame implements ActionListener {
 				// Mapdata d = exeData.getMapdata(data.getMapNumber());
 				// d.setFile((String) eve.getNewValue());
 				// attempt to update the list
-				mapList.setListData(exeData.getMapNames());
+				refreshMapList();
 				// close the current tab because shenanigans
 			} else if (eve.getPropertyName() == Changeable.PROPERTY_EDITED) {
 				if ((Boolean) eve.getNewValue()) {
@@ -2518,9 +2615,9 @@ public class EditorApp extends JFrame implements ActionListener {
 		}
 	}
 
-	// method adds a new map tab to the thing
+	// Method adds a new map tab to the thing
 	private void addMapTab(int selectionNum) {
-		// check to see if we are even set up yet
+		// Check to see if we are even set up yet
 		if (exeData == null) {
 			return;
 		}
@@ -2539,28 +2636,41 @@ public class EditorApp extends JFrame implements ActionListener {
 				}
 			}
 
-			// set up the data holder
+			// Set up the data holder
 			MapInfo data = new MapInfo(exeData, iMan, selectionNum);
-			// set up the map pane
+			// Set up the map pane
 			MapPane mapPanel = new MapPane(this, data);
 			EntityPane entityPanel = new EntityPane(this, data);
+			entityPanel.setOpsFlagsPanel(entitySettingsPanel);
 			TscPane txt = new TscPane(exeData, selectionNum, this, iMan);
 
-			// set up the mapdata pane
+			// Set up the mapdata pane
 			MapdataPane mapdatPanel = new MapdataPane(exeData, selectionNum, iMan.getImg(ResourceManager.rsrcBgBlue),
 					true); // $NON-NLS-1$
 
-			// add bits to holder
+			// Add bits to holder
 			TabOrganizer holder = new TabOrganizer(mapPanel, entityPanel, txt, mapdatPanel, data);
 			// componentVec.setSize(mapTabs.getTabCount() + 2); //not needed?
 			componentVec.add(mapTabs.getTabCount(), holder);
 
-			// finalize
+			// Finalize
 			// layout.show(tabPanel, activePerspective);
 			Component contents = buildTabContents(holder);
 			mapTabs.insertTab(exeData.getShortName(selectionNum), null, contents, exeData.getLongName(selectionNum),
 					mapTabs.getComponentCount());
 			mapTabs.setSelectedComponent(contents);
+			
+			// Reset Entity filter on new tab
+			entitySearchQuery = "";
+			int selected = EditorApp.this.mapTabs.getSelectedIndex();
+			if (selected != -1) {
+				TabOrganizer currentTab = componentVec.get(selected);
+				EntityPane ep = currentTab.getEntity();
+				Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
+						subcatList.getSelectedValue(), entitySearchQuery);
+				ep.getEntityList().setListData(eVec);
+				}
+			
 			if (scriptWindow.getName().equals(Messages.getString("EditorApp.2"))) { //$NON-NLS-1$
 				scriptWindow.add(scriptTabs, BorderLayout.CENTER);
 				scriptWindow.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
@@ -2607,21 +2717,34 @@ public class EditorApp extends JFrame implements ActionListener {
 
 		MapPane mapPanel = new MapPane(this, data);
 		EntityPane entityPanel = new EntityPane(this, data);
+		entityPanel.setOpsFlagsPanel(entitySettingsPanel);
 		TscPane txt = new TscPane(exeData, mapdat, this, iMan);
 
-		// set up the mapdata pane
+		// Set up the mapdata pane
 		MapdataPane mapdatPanel = new MapdataPane(exeData, mapdat, iMan.getImg(ResourceManager.rsrcBgBlue), true); // $NON-NLS-1$
 
-		// add bits to holder
+		// Add bits to holder
 		TabOrganizer holder = new TabOrganizer(mapPanel, entityPanel, txt, mapdatPanel, data);
 		// componentVec.setSize(mapTabs.getTabCount() + 2); //not needed?
 		componentVec.add(mapTabs.getTabCount(), holder);
 
-		// finalize
+		// Finalize
 		// layout.show(tabPanel, activePerspective);
 		Component contents = buildTabContents(holder);
 		mapTabs.insertTab(mapdat.getFile(), null, contents, mapdat.getMapname(), mapTabs.getComponentCount());
 		mapTabs.setSelectedComponent(contents);
+		
+		// Reset Entity filter on new tab
+		entitySearchQuery = "";
+		int selected = EditorApp.this.mapTabs.getSelectedIndex();
+		if (selected != -1) {
+			TabOrganizer currentTab = componentVec.get(selected);
+			EntityPane ep = currentTab.getEntity();
+			Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
+					subcatList.getSelectedValue(), entitySearchQuery);
+			ep.getEntityList().setListData(eVec);
+			}
+		
 		if (scriptWindow.getName().equals(Messages.getString("EditorApp.2"))) { //$NON-NLS-1$
 			scriptWindow.add(scriptTabs, BorderLayout.CENTER);
 			scriptWindow.add(buildScriptSidePanel(), scriptPanelOnEast ? BorderLayout.EAST : BorderLayout.WEST);
@@ -2641,6 +2764,7 @@ public class EditorApp extends JFrame implements ActionListener {
 		scriptTabs.setSelectedComponent(textScroll);
 	}
 
+	// Map list right-click menu (continued)
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// radio buttons for card layout
@@ -2664,7 +2788,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			// update
 			if (success) {
 				new MapdataDialog(this, d.getMapnum(), exeData, iMan.getImg(ResourceManager.rsrcBgBlue)); // $NON-NLS-1$
-				mapList.setListData(exeData.getMapNames());
+				refreshMapList();
 			}
 		} else if (e.getActionCommand().equals("MapList_Delete")) { //$NON-NLS-1$
 			airhorn();
@@ -2686,7 +2810,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			}
 			Mapdata d = exeData.addMap();
 			new MapdataDialog(this, d.getMapnum(), exeData, iMan.getImg(ResourceManager.rsrcBgBlue)); // $NON-NLS-1$
-			mapList.setListData(exeData.getMapNames());
+			refreshMapList();
 		} else if (e.getActionCommand().equals("MapList_Open")) { //$NON-NLS-1$
 			airhorn();
 			this.addMapTab(selectedMap);
@@ -2697,7 +2821,7 @@ public class EditorApp extends JFrame implements ActionListener {
 				return;
 			}
 			exeData.duplicateMap(selectedMap);
-			mapList.setListData(exeData.getMapNames());
+			refreshMapList();
 		} else if (e.getActionCommand().equals("MapList_Move")) { //$NON-NLS-1$
 			airhorn();
 			if (exeData == null) {
@@ -2711,7 +2835,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			} else {
 				mapList.setToolTipText(null);
 				exeData.moveMap(moveIndex, selectedMap, this);
-				mapList.setListData(exeData.getMapNames());
+				refreshMapList();
 				movingMapdata = false;
 			}
 		} else if (e.getActionCommand().equals("FileMenu_Load")) { //$NON-NLS-1$
@@ -2808,6 +2932,23 @@ public class EditorApp extends JFrame implements ActionListener {
 		}
 	}
 
+	private void refreshMapList() {
+		if (exeData == null) return;
+		String[] all = exeData.getMapNames();
+		if (mapSearchQuery == null || mapSearchQuery.isEmpty()) {
+			mapList.setListData(all);
+		} else {
+			String q = mapSearchQuery.toLowerCase();
+			java.util.List<String> filtered = new java.util.ArrayList<>();
+			for (String entry : all) {
+				if (entry.toLowerCase().contains(q)) {
+					filtered.add(entry);
+				}
+			}
+			mapList.setListData(filtered.toArray(new String[0]));
+		}
+	}
+
 	private void deleteSelectedMaps() {
 		List<String> mapstrs = mapList.getSelectedValuesList();
 		int[] indices = new int[mapstrs.size()];
@@ -2827,7 +2968,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			}
 		}
 		exeData.doneDeletingMaps();
-		mapList.setListData(exeData.getMapNames());
+		refreshMapList();
 	}
 
 	private void purgeData() {
@@ -2838,11 +2979,14 @@ public class EditorApp extends JFrame implements ActionListener {
 		mapList.removeAll();
 	}
 
+	// Load mod
+
 	public void loadFile(File selected) throws IOException {
 		purgeData(); // clean up any old tabs
 		exeData = new GameInfo(selected);
 		exeData.loadImages(iMan);
-		mapList.setListData(exeData.getMapNames());
+		mapSearchQuery = "";
+		refreshMapList();
 		categoryList.setListData(exeData.getEntityCategories());
 		subcatList.setListData(exeData.getEntitySubcat(Messages.getString("EditorApp.154"))); //$NON-NLS-1$
 		((NpcTblEditor) npcTblWindow).populate(exeData);
@@ -2933,90 +3077,97 @@ public class EditorApp extends JFrame implements ActionListener {
 		}
 	}
 
+	// Switch perspective
+
 	private void switchPerspective(String perspective) {
 		activePerspective = perspective;
 		switch (perspective) {
-		case PERSPECTIVE_TILE: {
-			// airhorn();
-			tilesetWindow.setVisible(showTileWindow);
-			entityWindow.setVisible(false);
-			CardLayout layout = (CardLayout) opsPanel.getLayout();
-			layout.show(opsPanel, PERSPECTIVE_TILE);
-			// update the tabs
-			for (int i = 0; i < mapTabs.getComponentCount(); i++) {
-				// for each tab
-				// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
-				TabOrganizer inf = componentVec.get(i);
-				// currentPanel.removeAll();
-				mapTabs.setComponentAt(i, buildTabContents(inf));
-				// currentPanel.revalidate();
+			case PERSPECTIVE_TILE: {
+				// airhorn();
+				tilesetWindow.setVisible(showTileWindow);
+				entityWindow.setVisible(false);
+				CardLayout layout = (CardLayout) opsPanel.getLayout();
+				layout.show(opsPanel, PERSPECTIVE_TILE);
+				// update the tabs
+				for (int i = 0; i < mapTabs.getComponentCount(); i++) {
+					// for each tab
+					// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
+					TabOrganizer inf = componentVec.get(i);
+					// currentPanel.removeAll();
+					mapTabs.setComponentAt(i, buildTabContents(inf));
+					// currentPanel.revalidate();
+				}
+				refreshCurrentMap();
+				break;
 			}
-			refreshCurrentMap();
-			break;
-		}
-		case PERSPECTIVE_ENTITY: {
-			tilesetWindow.setVisible(false);
-			entityWindow.setVisible(showEntityWindow);
-			CardLayout layout = (CardLayout) opsPanel.getLayout();
-			layout.show(opsPanel, PERSPECTIVE_ENTITY);
+			case PERSPECTIVE_ENTITY: {
+				tilesetWindow.setVisible(false);
+				entityWindow.setVisible(showEntityWindow);
+				CardLayout layout = (CardLayout) opsPanel.getLayout();
+				layout.show(opsPanel, PERSPECTIVE_ENTITY);
 
-			// update the tabs
-			for (int i = 0; i < mapTabs.getComponentCount(); i++) {
-				// for each tab
-				// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
-				TabOrganizer inf = componentVec.get(i);
-				// currentPanel.removeAll();
-				mapTabs.setComponentAt(i, buildTabContents(inf));
-				// currentPanel.revalidate();
+				int selIdx = mapTabs.getSelectedIndex();
+				if (selIdx != -1 && entitySettingsPanel != null) {
+					entitySettingsPanel.rebind(componentVec.get(selIdx).getEntity().getSelectionList());
+				} else if (entitySettingsPanel != null) {
+					entitySettingsPanel.unbind();
+				}
+
+				// update the tabs
+				for (int i = 0; i < mapTabs.getComponentCount(); i++) {
+					TabOrganizer inf = componentVec.get(i);
+					mapTabs.setComponentAt(i, buildTabContents(inf));
+				}
+				refreshCurrentMap();
+				break;
 			}
-			refreshCurrentMap();
-			break;
-		}
-		case PERSPECTIVE_TSC: {
-			tilesetWindow.setVisible(false);
-			entityWindow.setVisible(false);
-			if (!scriptDocked) {
-				scriptWindow.setVisible(true);
-				showScriptWindow = true;
+			case PERSPECTIVE_TSC: {
+				tilesetWindow.setVisible(false);
+				entityWindow.setVisible(false);
+				if (!scriptDocked) {
+					scriptWindow.setVisible(true);
+					showScriptWindow = true;
+				}
+				CardLayout layout = (CardLayout) opsPanel.getLayout();
+				layout.show(opsPanel, PERSPECTIVE_TSC);
+				// update the tabs
+				for (int i = 0; i < mapTabs.getComponentCount(); i++) {
+					// for each tab
+					// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
+					TabOrganizer inf = componentVec.get(i);
+					// currentPanel.removeAll();
+					mapTabs.setComponentAt(i, buildTabContents(inf));
+					// currentPanel.revalidate();
+				}
+				mapTabs.repaint();
+				break;
 			}
-			CardLayout layout = (CardLayout) opsPanel.getLayout();
-			layout.show(opsPanel, PERSPECTIVE_TSC);
-			// update the tabs
-			for (int i = 0; i < mapTabs.getComponentCount(); i++) {
-				// for each tab
-				// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
-				TabOrganizer inf = componentVec.get(i);
-				// currentPanel.removeAll();
-				mapTabs.setComponentAt(i, buildTabContents(inf));
-				// currentPanel.revalidate();
+			case PERSPECTIVE_MAPDATA: {
+				tilesetWindow.setVisible(false);
+				entityWindow.setVisible(false);
+				CardLayout layout = (CardLayout) opsPanel.getLayout();
+				layout.show(opsPanel, PERSPECTIVE_MAPDATA);
+				// update the tabs
+				for (int i = 0; i < mapTabs.getComponentCount(); i++) {
+					// for each tab
+					/*
+					JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
+					layout = (CardLayout)currentPanel.getLayout();
+					layout.show(currentPanel, PERSPECTIVE_MAPDATA);
+					*/
+					// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
+					TabOrganizer inf = componentVec.get(i);
+					// currentPanel.removeAll();
+					mapTabs.setComponentAt(i, buildTabContents(inf));
+					// currentPanel.revalidate();
+				}
+				mapTabs.repaint();
+				break;
 			}
-			mapTabs.repaint();
-			break;
-		}
-		case PERSPECTIVE_MAPDATA: {
-			tilesetWindow.setVisible(false);
-			entityWindow.setVisible(false);
-			CardLayout layout = (CardLayout) opsPanel.getLayout();
-			layout.show(opsPanel, PERSPECTIVE_MAPDATA);
-			// update the tabs
-			for (int i = 0; i < mapTabs.getComponentCount(); i++) {
-				// for each tab
-				/*
-				JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
-				layout = (CardLayout)currentPanel.getLayout();
-				layout.show(currentPanel, PERSPECTIVE_MAPDATA);
-				*/
-				// JPanel currentPanel = (JPanel)mapTabs.getComponent(i);
-				TabOrganizer inf = componentVec.get(i);
-				// currentPanel.removeAll();
-				mapTabs.setComponentAt(i, buildTabContents(inf));
-				// currentPanel.revalidate();
-			}
-			mapTabs.repaint();
-			break;
-		}
 		}
 	}
+
+	// Closing tab
 
 	/**
 	 * Attempt to close the currently open map
@@ -3071,6 +3222,9 @@ public class EditorApp extends JFrame implements ActionListener {
 				entityWindow.setContentPane(new JPanel());
 				entityWindow.validate();
 			}
+			if (mapTabs.getSelectedIndex() == -1 && entitySettingsPanel != null) {
+				entitySettingsPanel.unbind();
+			}
 		}
 		return true;
 	}
@@ -3109,6 +3263,7 @@ public class EditorApp extends JFrame implements ActionListener {
 		}
 		return true;
 	}
+
 
 	private JPanel buildScriptSidePanel() {
 		JPanel wrapper = new JPanel(new BorderLayout());
@@ -3150,6 +3305,8 @@ public class EditorApp extends JFrame implements ActionListener {
 		}
 		rebuildMapTabsContainer();
 	}
+
+	// Docking/undocking windows
 
 	public void dockOrUndockTileset() {
 		showTileWindow = !showTileWindow;
@@ -3215,16 +3372,85 @@ public class EditorApp extends JFrame implements ActionListener {
 		mapTabsContainer.repaint();
 	}
 
+	static class ScrollBarSynchronizer implements AdjustmentListener
+    {
+        JScrollBar[] scrollBars;
+
+        public ScrollBarSynchronizer(JScrollBar... scrollBars)
+        {
+            this.scrollBars = scrollBars;
+
+            for (JScrollBar scrollBar: scrollBars)
+                scrollBar.addAdjustmentListener( this );
+        }
+
+        @Override
+        public void adjustmentValueChanged(AdjustmentEvent e)
+        {
+            JScrollBar source = (JScrollBar)e.getSource();
+            int value = e.getValue();
+
+            for (JScrollBar scrollBar: scrollBars)
+            {
+                if (scrollBar != source)
+                {
+                    scrollBar.removeAdjustmentListener( this );
+                    scrollBar.setValue( value );
+                    scrollBar.addAdjustmentListener( this );
+                }
+            }
+        }
+    }
+
+    // Build tab contents
+
 	private Component buildTabContents(TabOrganizer inf) {
 		Component mainContent;
+
+		// Define both map panels the same way and bring them outside
+		MapPane mapPanel = inf.map;	// Edit map
+		JScrollPane mapScroll = new JScrollPane(mapPanel);
+		EntityPane entityPanel = inf.getEntity();	// Edit map
+		JScrollPane npcScroll = new JScrollPane(entityPanel);
+		
+		// Entity search box
+		JTextField searchField = new JTextField("");
+		TextPrompt searchFieldPrompt = new TextPrompt("Filter Entities...", searchField);
+		searchFieldPrompt.changeAlpha(0.5f);
+		searchFieldPrompt.changeStyle(Font.ITALIC);
+		searchField.setAlignmentX(Component.LEFT_ALIGNMENT);
+		searchField.setPreferredSize(new Dimension (180, 24));
+		searchField.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent eve) {
+				airhorn();
+				entitySearchQuery = searchField.getText();
+				int selected = EditorApp.this.mapTabs.getSelectedIndex();
+				if (selected != -1) {
+					TabOrganizer currentTab = componentVec.get(selected);
+					EntityPane ep = currentTab.getEntity();
+					Vector<EntityData> eVec = exeData.getEntityList(categoryList.getSelectedValue(),
+							subcatList.getSelectedValue(), entitySearchQuery);
+					ep.getEntityList().setListData(eVec);
+					}
+				}
+			});
+
+		// Sync the tile/entity scrollbars using the above class
+		new ScrollBarSynchronizer(mapScroll.getVerticalScrollBar(), npcScroll.getVerticalScrollBar());
+		new ScrollBarSynchronizer(mapScroll.getHorizontalScrollBar(), npcScroll.getHorizontalScrollBar());
+			// So the position doesn't reset on perspective change
+		new ScrollBarSynchronizer(npcScroll.getVerticalScrollBar(), mapScroll.getVerticalScrollBar());
+		new ScrollBarSynchronizer(npcScroll.getHorizontalScrollBar(), mapScroll.getHorizontalScrollBar());
+
 		switch (activePerspective) {
 		case PERSPECTIVE_TILE:
-			MapPane mapPanel = inf.map;
-			JScrollPane mapScroll = new JScrollPane(mapPanel);
-			mapScroll.addMouseWheelListener(new ScrollZoomAdapter(this, mapPanel));
-			mapScroll.getVerticalScrollBar().setUnitIncrement(10);
-			JScrollPane tileScroll = new JScrollPane(mapPanel.getTilePane());
-			tileScroll.getVerticalScrollBar().setUnitIncrement(5);
+			mapScroll.addMouseWheelListener(new ScrollZoomAdapter(this, mapPanel));	// Ctrl+scroll to zoom
+			mapScroll.getVerticalScrollBar().setUnitIncrement(EditorConfigDialog.getScrollUnitIncrement());
+			mapScroll.getHorizontalScrollBar().setUnitIncrement(EditorConfigDialog.getScrollUnitIncrement());
+			JScrollPane tileScroll = new JScrollPane(mapPanel.getTilePane());	// Show tileset
+			tileScroll.getVerticalScrollBar().setUnitIncrement(5);	// Adjust tileset V-scroll sensitivity
+			// Tile window undocked
 			if (showTileWindow) {
 				// only if this is the active tab
 				if (componentVec.indexOf(inf) == mapTabs.getSelectedIndex()) {
@@ -3236,35 +3462,48 @@ public class EditorApp extends JFrame implements ActionListener {
 					tilesetWindow.validate();
 				}
 				mainContent = mapScroll;
+				// Tile window docked
 			} else {
 				JSplitPane tileSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tileScroll,
-						mapPanel.getPreviewPane());
-				tileSplit.setDividerLocation(350);
+						mapPanel.getPreviewPane());	// Get preview of selected tiles
+					// TODO: Auto-wrap tileset pane to tileset width (+19 pixels)
+				tileSplit.setDividerLocation(531); // Most tilesets are 256px wide, so that x2 + editor margins (19px) = 531
 				JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tileSplit, mapScroll);
-				mainSplit.setDividerLocation(100);
+				mainSplit.setDividerLocation(100);	// Vertical split between tileset & map
 				mainContent = mainSplit;
 			} // if not showing helper window
 			break;
 		case PERSPECTIVE_ENTITY:
+		npcScroll.addMouseWheelListener(new ScrollZoomAdapter(this, entityPanel));	// Ctrl+scroll to zoom
+			if (componentVec.indexOf(inf) == mapTabs.getSelectedIndex()) {
+				entitySettingsPanel.rebind(inf.getEntity().getSelectionList());
+			}
+			// Entity window undocked
 			if (showEntityWindow) {
 				// only if this is the active tab
-				mapScroll = new JScrollPane(inf.getEntity());
-				mapScroll.getVerticalScrollBar().setUnitIncrement(10);
 				if (componentVec.indexOf(inf) == mapTabs.getSelectedIndex()) {
-					JScrollPane listScroll = new JScrollPane(inf.getEntity().getEntityList());
-					JScrollPane editScroll = new JScrollPane(inf.getEntity().getEditPane());
-					JSplitPane windowSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editScroll, listScroll);
-					windowSplit.setDividerLocation(120);
+					JScrollPane listScroll = new JScrollPane(inf.getEntity().getEntityList());	// NPC list
+					JScrollPane editScroll = new JScrollPane(inf.getEntity().getEditPane());	// flagID/event/order
+					editScroll.getVerticalScrollBar().setUnitIncrement(10);
+
+					JPanel jp = new JPanel(new BorderLayout());
+					jp.add(searchField, BorderLayout.PAGE_START);
+					jp.add(listScroll, BorderLayout.CENTER);
+
+					JSplitPane windowSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editScroll, jp);
+					windowSplit.setDividerLocation(110);
 					entityWindow.setContentPane(windowSplit);
 					entityWindow.validate();
 				}
-				mainContent = mapScroll;
+				mainContent = npcScroll;
+				// Entity window docked
 			} else {
+				npcScroll.getVerticalScrollBar().setUnitIncrement(10);	// Adjust scroll sensitivity
+
+				JScrollPane listScroll = new JScrollPane(inf.getEntity().getEntityList());	// NPC list
 				JScrollPane editScroll = new JScrollPane(inf.getEntity().getEditPane());
 				editScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-				mapScroll = new JScrollPane(inf.getEntity());
-				mapScroll.getVerticalScrollBar().setUnitIncrement(10);
-				JScrollPane listScroll = new JScrollPane(inf.getEntity().getEntityList());
+				editScroll.getVerticalScrollBar().setUnitIncrement(10);
 
 				JPanel jp = new JPanel(new BorderLayout());
 				@SuppressWarnings("serial")
@@ -3275,12 +3514,13 @@ public class EditorApp extends JFrame implements ActionListener {
 					}
 				});
 				entityDockButton.setText("Undock");
-				jp.add(entityDockButton, BorderLayout.PAGE_START);
+				jp.add(searchField, BorderLayout.PAGE_START);
 				jp.add(listScroll, BorderLayout.CENTER);
+				jp.add(entityDockButton, BorderLayout.PAGE_END);
 
 				JSplitPane miniSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editScroll, jp);
-				miniSplit.setDividerLocation(120);
-				JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, miniSplit, mapScroll);
+				miniSplit.setDividerLocation(110);
+				JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, miniSplit, npcScroll);
 				split.setDividerLocation(160);
 				mainContent = split;
 			}
@@ -3393,9 +3633,32 @@ public class EditorApp extends JFrame implements ActionListener {
 	}
 
 	public static void airhorn() {
-		if (blazed) {
+		if ("weed".equals(getTheme()) && EditorConfigDialog.isSfxEnabled()) {
 			BlSound.playSample(EditorApp.class.getResource("rsrc/horn.wav"));
 		}
+	}
+
+	private static void playThemeStartup() {
+		if (!EditorConfigDialog.isSfxEnabled()) return;
+		String themeId = getTheme();
+
+		String[] wavCandidates = { "startup_loop.wav", "startup.wav" };
+		for (String fileName : wavCandidates) {
+			try {
+				java.io.InputStream is = ResourceManager.openThemedResource(themeId, fileName);
+				if (is != null) {
+					BlSound.playSample(is, fileName.equals("startup_loop.wav"));
+					break;
+				}
+			} catch (java.io.IOException ignored) {}
+		}
+
+		try {
+			java.io.InputStream midiIs = ResourceManager.openThemedResource(themeId, "startup.mid");
+			if (midiIs != null) {
+				BlSound.playMidi(midiIs);
+			}
+		} catch (java.io.IOException ignored) {}
 	}
 
 	public class LoadMapAction {
@@ -3431,6 +3694,10 @@ public class EditorApp extends JFrame implements ActionListener {
 				}
 			}
 		}
+
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putInt(PREF_EDITOR_MODE, EDITOR_MODE);
+		prefs.putInt(PREF_EDITOR_BITMAP_MODE, EDITOR_BITMAP_MODE);
 
 		// https://blogs.oracle.com/nickstephen/entry/java_redirecting_system_out_and
 		// initialize logging to go to rolling log file

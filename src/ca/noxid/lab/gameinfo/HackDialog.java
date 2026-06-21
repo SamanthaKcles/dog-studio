@@ -82,7 +82,7 @@ public class HackDialog extends JDialog implements TreeSelectionListener{
 
 	public HackDialog(Frame aFrame, CSExe exe, ResourceManager iMan) {
 		super(aFrame, true);
-		if (EditorApp.blazed)
+		if (ResourceManager.cursor != null)
 			this.setCursor(ResourceManager.cursor);
 		this.iMan = iMan;
 		this.setLocation(aFrame.getLocation());

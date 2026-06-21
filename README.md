@@ -1,33 +1,47 @@
-# Dawg Studio  
-A Cave Story level editor built off of Noxid’s Booster’s Lab.
+# Dog Studio  
+A Cave Story level editor built off of Noxid’s Booster’s Lab. Don't get it twisted, though, it's its own thing.
 
 # Purpose  
-In the current modding “era” (if you want to call it that) editors seem to have a bit of trouble keeping up with every new development. You’ll have to find workarounds to support a custom feature or just deal with it unsupported. I developed Dawg Studio to address this. Along with adding every other feature I’ve wanted.
+I wanted to create a customizable "everything editor" that allows for personalization and efficiency. Now you won't have to sit and go "Wow, I really wish the editor could do that" because now it does.
 
 # Features  
-I’m going to assume you’re familiar with Booster’s Lab. If not, that’s okay, too. This fork is very much suitable, and probably better to start with, than the original BL (even if you don’t know what any of this means yet). As for the features:
+I’m going to assume you’re familiar with Booster’s Lab. If not, that’s okay, too. Here is a list of all the features:
 
 ### General
 
-- **Unique theme**  
-  - There is a new theme. It’s purple.  
+- **Customizable Themes**  
+  - You can easily create and switch between themes. The lab is now yours!
 - **Recent Files**  
-  - Up to five of your recently loaded projects appear here.  
+  - Up to ten of your recently loaded projects appear here.  
+- **New .PXA Editor**  
+  - It's SDE. It's literally just SDE. (hi jakzie)
 - **Map Tab Reordering**  
   - Map tabs can be dragged around and reordered.  
-- **Map Dragging**  
+- **Map Dragging**
   - Holding the middle click and moving your mouse will drag the map.  
 - **Tab Keybinds**  
   - The tile, entity, script, and mapdata tabs have been bound to F1, F2, F3, and F4.  
 - **Editor Configuration**  
-  - A new window has been added under the actions tab. Here you can add/remove/edit TSC commands, END commands, songs, sound effects, equips, map bosses, and background types.  
+  - A new window has been added under the Editor tab. Here you can add/remove/edit TSC commands, END commands, songs, sound effects, equips, map bosses, and background types.
+  - You can also choose to disable SFX, script errors, and command errors. You can also change the sensitivity of the map scroll bar.
+- **Autumnal Lab Mode**  
+  - A new option has also been added which will give your editor all of the Autumnal Lab features.
 - **Unload Mod**  
   - Replaced the “New” option. Unloads the current mod.
+- **Rect Generator**  
+  - A niche but helpful feature for those who need it!
+- **NPC Flag Location**  
+  - A spicy change, but once you get used to it it's better than scrolling down the list each time. If enough people want the old one back I'll try to make it an option.
+- **Misc Changes**  
+  - Niche actions have been given their own submenu.
+  - There is now a search filter for both the map and entity lists.
 
 ### Script
 
 - **Window Docking**  
   - You can now dock the script window.  
+- **Selectable Things**  
+  - You can pull up a graphic or list to select which thing you want when it comes to faces, items, maps, songs, sfx, and direction.
 - **Command Bar Position**  
   - A “flip” button has been added allowing you to move the command bar from right to left and vice-versa.  
 - **Undo/Redo**  

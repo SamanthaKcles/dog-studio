@@ -3,8 +3,10 @@ package ca.noxid.lab.tile;
 import ca.noxid.lab.BlConfig;
 import ca.noxid.lab.EditorApp;
 import ca.noxid.lab.Messages;
+import ca.noxid.lab.ThemeDialog;
 import ca.noxid.lab.mapdata.MapInfo;
 import ca.noxid.lab.mapdata.MapInfo.PxeEntry;
+import ca.noxid.lab.entity.EntityPane;
 import ca.noxid.lab.rsrc.ResourceManager;
 import ca.noxid.lab.script.TscPane;
 import ca.noxid.lab.tile.MapPoly.xPoint;
@@ -124,6 +126,8 @@ public class MapPane extends BgPanel {
 		this.getActionMap().put("map-undo", undo);
 		this.getInputMap(JComponent.WHEN_FOCUSED).put(
 				KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "map-redo");
+		this.getInputMap(JComponent.WHEN_FOCUSED).put(
+				KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), "map-redo");
 		this.getActionMap().put("map-redo", redo);
 	}
 
@@ -320,7 +324,7 @@ public class MapPane extends BgPanel {
 			drawMapPhysical((Graphics2D) g2d.create());
 		}
 		//draw pink outline, just like daddy CE used to do 
-		g2d.setColor(Color.MAGENTA);
+		g2d.setColor(ThemeDialog.getCurrentMapOutline());	// (Color.MAGENTA)
 		int buf = scale / 2;
 		g2d.drawRect(buf, buf, (mapX - 1) * scale - 1, (mapY - 1) * scale - 1);
 		drawCursor(g2d);
@@ -826,7 +830,7 @@ public class MapPane extends BgPanel {
 				return; //do nothing if right mouse button
 			}
 			if ((eve.getModifiersEx() & MouseEvent.BUTTON2_DOWN_MASK) != 0) {
-				return;
+				return; //do nothing if middle mouse button
 			}
 			if (dragging) {
 				//setCursor(null);

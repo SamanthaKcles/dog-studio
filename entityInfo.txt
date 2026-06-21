@@ -3,7 +3,7 @@
 //Contributors: Wistil (cannibalized CE's entity list)
 //		Noxid (most of entities 0-180 & some more)
 //		Carrotlord (rects for entities 180+)
-//     Bombchu Link (updated and refreshed framarects.)
+//     Bombchu Link (updated and refreshed framerects.)
 #0	 	 	Null 	0:0:0:0	<nothing> 	NPC:Npc0	General:Tool CE:General ;
 #1	Weapn	energy	EXP	0:32:32:64	Weapon energy 	NPC:NpcSym	CE:General ;
 #2	Enemy	Behem	Behemoth 	0:0:64:48	Enemy - Behemoth 	NPC:NpcEggs1	CE:Egg1 Tileset:Eggs1 Enemy:Ground ;
