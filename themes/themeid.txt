@@ -1,8 +1,8 @@
 default
 skyisland
+bubblegum
 classic
 caveeditor
 dawg
 syntheticritual
-dripquest
 weed

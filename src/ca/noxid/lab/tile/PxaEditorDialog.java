@@ -110,8 +110,8 @@ public class PxaEditorDialog extends JDialog {
     private JLabel           statusLabel;
     private int hoveredTile = -1;
 
-    public PxaEditorDialog(Frame owner, MapInfo data, ResourceManager imageManager) {
-        super(owner, "Edit .pxa – " + data.getPxa().getName(), true);
+    public PxaEditorDialog(Window owner, MapInfo data, ResourceManager imageManager) {
+        super(owner, "Edit .pxa – " + data.getPxa().getName(), ModalityType.APPLICATION_MODAL);
         this.dataHolder = data;
         this.iMan       = imageManager;
 

@@ -17,22 +17,22 @@ public class EntitySettingsPanel extends JPanel implements ActionListener {
     private Set<PxeEntry> entityList;
 
     private static final int[] FLAG_ORDER = {
-        13, // Interactable
-        12, // Spawn with alt direction
-         9, // Run event on death
-        14, // No Appear if flagID set
-        11, // Appear once flagID set
-         2, // Invulnerable
          5, // Shootable
-         8, // Run event on contact
+         1, // Not Affected By Tile44
+         3, // Ignore Solid
+        10, // (Unused)
          0, // Solid (bouncy sides)
          6, // Solid (hard sides)
-         3, // Ignore Solid
          4, // Bouncy Top
          7, // Rear and top no damage
-         1, // Not Affected By Tile44
+        11, // Appear once flagID set
+        14, // No Appear if flagID set
+         9, // Run event on death
+         8, // Run event on contact
+        13, // Interactable
+        12, // Spawn with alt direction
         15, // Show Damage #
-        10  // (Unused)
+         2  // Invulnerable
     };
 
     private static final int COLUMNS = 4;

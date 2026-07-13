@@ -65,6 +65,12 @@ public class GameInfo {
 	private File armsImageFile;
 	private File faceFile;
 	private File itemImageFile;
+	private File keyItemImageFile;
+	private File npcCharFile;
+	private File npcLordFile;
+	private File npcBllgFile;
+	private File npcFamFile;
+	private File npcEzrFile;
 	private File autumnObjectsFile;
 	private File autumnItemsFile;
 	private File autumnCharactersFile;
@@ -86,6 +92,12 @@ public class GameInfo {
 	public File getArmsImageFile() {return armsImageFile;}
 	public File getFaceFile() {return faceFile;}
 	public File getItemImageFile() {return itemImageFile;}
+	public File getKeyItemImageFile() {return keyItemImageFile;}
+	public File getNpcChar() {return npcCharFile;}
+	public File getNpcLord() {return npcLordFile;}
+	public File getNpcBllg() {return npcBllgFile;}
+	public File getNpcFam() {return npcFamFile;}
+	public File getNpcEzr() {return npcEzrFile;}
 	public File getAutumnObjectsFile() {return autumnObjectsFile;}
 	public File getAutumnItemsFile() {return autumnItemsFile;}
 	public File getAutumnCharactersFile() {return autumnCharactersFile;}
@@ -182,6 +194,20 @@ public class GameInfo {
 		npcSymFile = ResourceManager.checkBase(npcSymFile);
 		itemImageFile = new File(dataDir + "/ItemImage" + imageExtension); //$NON-NLS-1$
 		itemImageFile = ResourceManager.checkBase(itemImageFile);
+		if (EditorApp.isCsdhMode()) {
+			keyItemImageFile = new File(dataDir + "/KeyImage" + imageExtension); //$NON-NLS-1$
+			keyItemImageFile = ResourceManager.checkBase(keyItemImageFile);
+			npcCharFile = new File(dataDir + "/Npc/NpcChar" + imageExtension); //$NON-NLS-1$
+			npcCharFile = ResourceManager.checkBase(npcCharFile);
+			npcLordFile = new File(dataDir + "/Npc/NpcLord" + imageExtension); //$NON-NLS-1$
+			npcLordFile = ResourceManager.checkBase(npcLordFile);
+			npcBllgFile = new File(dataDir + "/Npc/NpcBllg" + imageExtension); //$NON-NLS-1$
+			npcBllgFile = ResourceManager.checkBase(npcBllgFile);
+			npcFamFile = new File(dataDir + "/Npc/NpcFam" + imageExtension); //$NON-NLS-1$
+			npcFamFile = ResourceManager.checkBase(npcFamFile);
+			npcEzrFile = new File(dataDir + "/Npc/NpcEzr" + imageExtension); //$NON-NLS-1$
+			npcEzrFile = ResourceManager.checkBase(npcEzrFile);
+		}
 		faceFile = new File(dataDir + "/Face" + imageExtension); //$NON-NLS-1$
 		faceFile = ResourceManager.checkBase(faceFile);
 		armsImageFile = new File(dataDir + "/ArmsImage" + imageExtension); //$NON-NLS-1$
@@ -357,6 +383,12 @@ public class GameInfo {
 		iMan.reloadImage(npcReguFile, 1);
 		iMan.reloadImage(npcSymFile, 1);
 		iMan.reloadImage(itemImageFile, 1);
+		if (keyItemImageFile != null) iMan.reloadImage(keyItemImageFile, 1);
+		if (npcCharFile != null) iMan.reloadImage(npcCharFile, 1);
+		if (npcLordFile != null) iMan.reloadImage(npcLordFile, 1);
+		if (npcBllgFile != null) iMan.reloadImage(npcBllgFile, 1);
+		if (npcFamFile != null) iMan.reloadImage(npcFamFile, 1);
+		if (npcEzrFile != null) iMan.reloadImage(npcEzrFile, 1);
 		iMan.reloadImage(faceFile, 1);
 		iMan.reloadImage(armsImageFile, 1);
 		if (autumnObjectsFile != null)   iMan.reloadImage(autumnObjectsFile, 1);
@@ -451,25 +483,56 @@ public class GameInfo {
 		return flist.toArray(new String[flist.size()]);
 	}
 	
+	private File getBackgroundDirectory(File rootDir) {
+		if (rootDir == null) {
+			return null;
+		}
+		if (EditorApp.isCsdhOrEncoreMode()) {
+			return new File(rootDir, "bk");
+		}
+		return rootDir;
+	}
+
+	private File getBackgroundDirectory() {
+		return getBackgroundDirectory(dataDir);
+	}
+
+	public File getBackgroundFile(String bgName) {
+		String imageExtension = gameConfig.getImageExtension();
+		File bgDir = getBackgroundDirectory();
+		if (bgDir == null) {
+			return null;
+		}
+		File bgFile = new File(bgDir, bgName + imageExtension);
+		return ResourceManager.checkBase(bgFile);
+	}
+
 	public String[] getBackgrounds() {
 		String imageExtension = gameConfig.getImageExtension();
 		ArrayList<String> flist = new ArrayList<>();
-		File[] fileList = dataDir.listFiles(new BackgroundFilter());
-		for (File f : fileList) {
-			flist.add(f.getName().replace(imageExtension, "")); //$NON-NLS-1$
-		}
-
-		
-		File baseDir = ResourceManager.getBaseFolder(dataDir);
-		if (baseDir != null) {
-			fileList = baseDir.listFiles(new BackgroundFilter());
+		File bgDir = getBackgroundDirectory();
+		if (bgDir != null) {
+			File[] fileList = bgDir.listFiles(new BackgroundFilter());
 			if (fileList != null) {
 				for (File f : fileList) {
 					flist.add(f.getName().replace(imageExtension, "")); //$NON-NLS-1$
-				} 
-			} 
+				}
+			}
 		}
-		return flist.toArray(new String[flist.size()]);
+
+		File baseDir = ResourceManager.getBaseFolder(dataDir);
+		if (baseDir != null) {
+			File baseBgDir = getBackgroundDirectory(baseDir);
+			if (baseBgDir != null) {
+				File[] fileList = baseBgDir.listFiles(new BackgroundFilter());
+				if (fileList != null) {
+					for (File f : fileList) {
+						flist.add(f.getName().replace(imageExtension, "")); //$NON-NLS-1$
+					}
+				}
+			}
+		}
+		return flist.toArray(new String[0]);
 	}
 	
 	private void loadNpcTbl(File tblFile) {
@@ -1637,7 +1700,10 @@ public class GameInfo {
 		}
 		String imageExtension = gameConfig.getImageExtension();
 		for (Mapdata m : mapdataStore) {
-			foundFiles.add(new File(dataDir + "/" + m.getBG() + imageExtension));
+			File bgFile = getBackgroundFile(m.getBG());
+			if (bgFile != null) {
+				foundFiles.add(bgFile);
+			}
 			foundFiles.add(new File(dataDir + "/Npc/" + gameConfig.getNpcPrefix() + m.getNPC1() + imageExtension));
 			foundFiles.add(new File(dataDir + "/Npc/" + gameConfig.getNpcPrefix() + m.getNPC2() + imageExtension));
 			foundFiles.add(new File(dataDir + "/Stage/" + gameConfig.getTilesetPrefix() + m.getTileset() + imageExtension));

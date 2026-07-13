@@ -53,10 +53,17 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 	private static final String SET_KEY = "set key"; //$NON-NLS-1$
 	private static final String SET_VALUE = "set value"; //$NON-NLS-1$
 	private static Vector<TscCommand> commandInf = getCommands();
+	private static List<Color> colorPresetColors = new ArrayList<>();
+	private static List<String> colorPresetNames = new ArrayList<>();
 	private static List<String> musicList = getMusicList();
 	private static List<String> sfxList = getSfxList();
 	private static List<String> equipList = getEquipList();
 	private static Set<String> eventEnders = loadEventEnders();
+	static {
+		if (EditorApp.isCsdhMode()) {
+			loadColorPresets();
+		}
+	}
 	private static Vector<String> def1 = new Vector<>();
 	private static Vector<String> def2 = new Vector<>();
 	private final JTextArea comLabel = new JTextArea(Messages.getString("TscPane.9"), 2, 18); //$NON-NLS-1$
@@ -429,6 +436,10 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		put('#', "Number");
 		put('.', "Ticks");
 		put('$', "String");
+		if (EditorApp.isCsdhMode()) {
+			put('c', "Color Preset");
+			put('k', "Key Item");
+		}
 	}};
 
 	private void updateArgInScript(int paramOffset, int paramLen, String newValue) {
@@ -959,6 +970,47 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 				selectFaceBtn.addActionListener(ae -> showFacePicker(faceSheet, 48, paramOffset, paramLen));
 				facePanel.add(selectFaceBtn);
 				jp.add(facePanel);
+			} catch (Exception ignored) {}
+			break;
+		}
+		// Color Preset
+		case 'c': {
+			if (!EditorApp.isCsdhMode()) {
+				break;
+			}
+			try {
+				String presetName = colorPresetNames.get(fArgNum);
+				Color presetColor = colorPresetColors.get(fArgNum);
+				jp.add(new JLabel(presetName));
+				JPanel colorSquare = new JPanel();
+				colorSquare.setBackground(presetColor);
+				colorSquare.setOpaque(true);
+				colorSquare.setPreferredSize(new Dimension(16, 16));
+				colorSquare.setMinimumSize(new Dimension(16, 16));
+				colorSquare.setMaximumSize(new Dimension(16, 16));
+				jp.add(colorSquare);
+			} catch (Exception ignored) {
+				jp.add(new JLabel(String.valueOf(fArgNum)));
+			}
+			break;
+		}
+		// Key Item
+		case 'k': {
+			if (!EditorApp.isCsdhMode()) {
+				break;
+			}
+			try {
+				float assumedScale = exeDat.getConfig().getTileSize() / 16f;
+				ImageIcon keyItemImage = new ImageIcon(
+						rm.getImg(exeDat.getKeyItemImageFile())
+								.getSubimage((int) (32 * assumedScale) * (fArgNum % 8),
+										(int) (16 * assumedScale) * (fArgNum / 8),
+										(int) (32 * assumedScale),
+										(int) (16 * assumedScale)));
+				JLabel label = new JLabel(keyItemImage);
+				label.setBackground(Color.black);
+				label.setOpaque(true);
+				jp.add(label);
 			} catch (Exception ignored) {}
 			break;
 		}
@@ -1773,6 +1825,46 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			e.printStackTrace();
 		}
 		return retVal;
+	}
+
+	private static void loadColorPresets() {
+		colorPresetColors.clear();
+		colorPresetNames.clear();
+		try {
+			Scanner sc = new Scanner(getJarLocationFile("colorPresets.txt"));
+			while (sc.hasNextLine()) {
+				String line = sc.nextLine().trim();
+				if (line.isEmpty() || line.startsWith("//")) continue;
+				int dashIndex = line.indexOf(" - ");
+				if (dashIndex <= 0) continue;
+				String idPart = line.substring(0, dashIndex).trim();
+				int id = Integer.parseInt(idPart);
+				int openParen = line.indexOf('(');
+				int closeParen = line.indexOf(')', openParen);
+				if (openParen < 0 || closeParen < 0 || closeParen <= openParen + 1) continue;
+				String[] rgbParts = line.substring(openParen + 1, closeParen).split(",");
+				if (rgbParts.length != 3) continue;
+				int r = Integer.parseInt(rgbParts[0].trim());
+				int g = Integer.parseInt(rgbParts[1].trim());
+				int b = Integer.parseInt(rgbParts[2].trim());
+				int firstQuote = line.indexOf('"');
+				int lastQuote = line.lastIndexOf('"');
+				if (firstQuote < 0 || lastQuote <= firstQuote) continue;
+				String name = line.substring(firstQuote + 1, lastQuote);
+				if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+					while (colorPresetColors.size() <= id) {
+						colorPresetColors.add(Color.WHITE);
+						colorPresetNames.add("Unknown");
+					}
+					colorPresetColors.set(id, new Color(r, g, b));
+					colorPresetNames.set(id, name);
+				}
+			}
+			sc.close();
+		} catch (FileNotFoundException ignored) {
+		} catch (Exception err) {
+			err.printStackTrace();
+		}
 	}
 
 	private static ArrayList<String> getMusicList() {

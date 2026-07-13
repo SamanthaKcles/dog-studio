@@ -11,6 +11,7 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -344,9 +345,27 @@ public class ThemeDialog extends JDialog {
 		cancelButton.addActionListener(e -> dispose());
 		getRootPane().setDefaultButton(okButton);
 
-		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-		buttonPanel.add(okButton);
-		buttonPanel.add(cancelButton);
+		JButton getThemesButton = new JButton("Get Themes");
+		getThemesButton.addActionListener(e -> {
+			try {
+				Desktop.getDesktop().browse(new URI("https://samandk.com/themes"));
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this,
+						"Could not open browser: " + ex.getMessage(),
+						"Error", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+
+		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+		leftPanel.add(getThemesButton);
+
+		JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
+		rightPanel.add(okButton);
+		rightPanel.add(cancelButton);
+
+		JPanel buttonPanel = new JPanel(new BorderLayout());
+		buttonPanel.add(leftPanel, BorderLayout.WEST);
+		buttonPanel.add(rightPanel, BorderLayout.EAST);
 
 		setLayout(new BorderLayout());
 		add(scroll, BorderLayout.CENTER);

@@ -44,9 +44,10 @@ public class TilesetPane extends JPanel {
 		//setup popup menu
 		popup = new JPopupMenu();
 		JMenuItem editPxaItem = new JMenuItem("Edit .pxa");
+		editPxaItem.setMargin(new Insets(-2, -32, -2, 8));
 		editPxaItem.addActionListener(e -> {
-			Frame ownerFrame = (Frame) SwingUtilities.getWindowAncestor(TilesetPane.this);
-			PxaEditorDialog dlg = new PxaEditorDialog(ownerFrame, dataHolder, iMan);
+			Window ownerWindow = SwingUtilities.getWindowAncestor(TilesetPane.this);
+			PxaEditorDialog dlg = new PxaEditorDialog(ownerWindow, dataHolder, iMan);
 			dlg.setVisible(true);
 			TilesetPane.this.repaint();
 			parent.repaint();
@@ -210,6 +211,25 @@ public class TilesetPane extends JPanel {
 			if (eve.isPopupTrigger()) {
 				popup.show(eve.getComponent(), eve.getX(), eve.getY());
 			}
+		}
+
+		@Override
+		public void mouseMoved(MouseEvent eve) {
+			int scale = (int) (dataHolder.getConfig().getTileSize() * EditorApp.tilesetScale);
+			int tx = Math.min(eve.getX() / scale, maxTilesX);
+			int ty = Math.min(eve.getY() / scale, maxTilesY);
+			int width = dataHolder.getConfig().getTilesetWidth();
+			if (width <= 0) {
+				width = iMan.getImg(dataHolder.getTileset()).getWidth() /
+						dataHolder.getConfig().getTileSize();
+			}
+			int tileId = ty * width + tx;
+			parent.parent.setTilesetHoverTile(tileId);
+		}
+
+		@Override
+		public void mouseExited(MouseEvent eve) {
+			parent.parent.setTilesetHoverTile(-1);
 		}
 
 		@Override

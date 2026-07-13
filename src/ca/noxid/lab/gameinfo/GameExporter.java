@@ -1,5 +1,6 @@
 package ca.noxid.lab.gameinfo;
 
+import ca.noxid.lab.EditorApp;
 import ca.noxid.lab.Messages;
 import ca.noxid.lab.mapdata.Mapdata;
 
@@ -92,8 +93,10 @@ public class GameExporter {
 			//copy the maps files
 			for (Mapdata data : game.getMapdata()) {
 				HashMap<File,File> mapfiles = new HashMap<>();
-				mapfiles.put(new File(curData + File.separator + data.getBG() + game.getImgExtension()),
-						new File(newdata + File.separator + data.getBG() + game.getImgExtension()));
+				String bgRelPath = data.getBG() + game.getImgExtension();
+				File bgSource = new File(curData + File.separator + (EditorApp.isCsdhOrEncoreMode() ? "bk" : "") + File.separator + bgRelPath);
+				File bgDest = new File(newdata + File.separator + (EditorApp.isCsdhOrEncoreMode() ? "bk" : "") + File.separator + bgRelPath);
+				mapfiles.put(bgSource, bgDest);
 				mapfiles.put(new File(curData + "/Npc/" + game.getConfig().getNpcPrefix() + data.getNPC1() + game.getImgExtension()), //$NON-NLS-1$
 						new File(newNpc + File.separator + game.getConfig().getNpcPrefix() + data.getNPC1() + game.getImgExtension()));
 				mapfiles.put(new File(curData + "/Npc/" + game.getConfig().getNpcPrefix() + data.getNPC2() + game.getImgExtension()), //$NON-NLS-1$

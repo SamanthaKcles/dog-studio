@@ -1,5 +1,6 @@
 package ca.noxid.lab.entity;
 
+import ca.noxid.lab.EditorApp;
 import ca.noxid.lab.gameinfo.GameInfo;
 import ca.noxid.lab.mapdata.MapInfo;
 import ca.noxid.lab.rsrc.ResourceManager;
@@ -96,6 +97,16 @@ public class EntityListRender extends DefaultListCellRenderer {
 			srcImg = iMan.getImg(data.getTileset());
 		else if (tilesetNum == 0x10) //npc myChar
 			srcImg = iMan.getImg(exeData.getMyCharFile());
+		else if (EditorApp.isCsdhMode() && tilesetNum == 0x18 && exeData.getNpcChar() != null)
+			srcImg = iMan.getImg(exeData.getNpcChar());
+		else if (EditorApp.isCsdhMode() && tilesetNum == 0x19 && exeData.getNpcLord() != null)
+			srcImg = iMan.getImg(exeData.getNpcLord());
+		else if (EditorApp.isCsdhMode() && tilesetNum == 0x1C && exeData.getNpcBllg() != null)
+			srcImg = iMan.getImg(exeData.getNpcBllg());
+		else if (EditorApp.isCsdhMode() && tilesetNum == 0x1D && exeData.getNpcFam() != null)
+			srcImg = iMan.getImg(exeData.getNpcFam());
+		else if (EditorApp.isCsdhMode() && tilesetNum == 0x1F && exeData.getNpcEzr() != null)
+			srcImg = iMan.getImg(exeData.getNpcEzr());
 		else if (tilesetNum == 0x19 && exeData.getAutumnObjectsFile() != null)
 			srcImg = iMan.getImg(exeData.getAutumnObjectsFile());
 		else if (tilesetNum == 0x26 && exeData.getAutumnItemsFile() != null)

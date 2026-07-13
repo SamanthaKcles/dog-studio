@@ -522,6 +522,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 		private FormattedUpdateTextField flagIDInput;
 		private FormattedUpdateTextField eventInput;
 		private FormattedUpdateTextField orderInput;
+		private FormattedUpdateTextField charOffsetInput;
 		private FormattedUpdateTextField cv01Input;
 		private FormattedUpdateTextField cv02Input;
 		private FormattedUpdateTextField cv03Input;
@@ -555,6 +556,9 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 			c.gridy++;
 			this.add(new JLabel(Messages.getString("EntityPane.6")), c); //$NON-NLS-1$
 			c.gridy++;
+			if (EditorApp.isCsdhMode()) {
+				this.add(new JLabel("Special Tag"), c); c.gridy++;
+			}
 			if (EditorConfigDialog.isAutumnalLabEnabled()) {
 				this.add(new JLabel(Messages.getString("EntityPane.Custom.1")), c); c.gridy++; //$NON-NLS-1$
 				this.add(new JLabel(Messages.getString("EntityPane.Custom.2")), c); c.gridy++; //$NON-NLS-1$
@@ -581,6 +585,11 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 			orderInput.addActionListener(this);
 			this.add(orderInput, c);
 			c.gridy++;
+			if (EditorApp.isCsdhOrEncoreMode()) {
+				charOffsetInput = new FormattedUpdateTextField(lFormat);
+				charOffsetInput.setColumns(4); charOffsetInput.addActionListener(this);
+				this.add(charOffsetInput, c); c.gridy++;
+			}
 			if (EditorConfigDialog.isAutumnalLabEnabled()) {
 				cv01Input = new FormattedUpdateTextField(lFormat);
 				cv01Input.setColumns(4); cv01Input.addActionListener(this);
@@ -611,6 +620,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 				flagIDInput.setEnabled(state);
 				eventInput.setEnabled(state);
 				orderInput.setEnabled(state);
+				if (charOffsetInput != null) charOffsetInput.setEnabled(state);
 				if (cv01Input != null) cv01Input.setEnabled(state);
 				if (cv02Input != null) cv02Input.setEnabled(state);
 				if (cv03Input != null) cv03Input.setEnabled(state);
@@ -632,6 +642,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 				flagIDInput.setText(String.valueOf(p.getFlagID()));
 				eventInput.setText(String.valueOf(p.getEvent()));
 				orderInput.setText(String.valueOf(p.getOrder()));
+				if (charOffsetInput != null) charOffsetInput.setText(String.valueOf(p.getCharOffset()));
 				if (cv01Input != null) cv01Input.setText(String.valueOf(p.getCustomValue01()));
 				if (cv02Input != null) cv02Input.setText(String.valueOf(p.getCustomValue02()));
 				if (cv03Input != null) cv03Input.setText(String.valueOf(p.getCustomValue03()));
@@ -661,6 +672,7 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 				}
 				flagIDInput.setText(flagID);
 				eventInput.setText(event);
+				if (charOffsetInput != null) charOffsetInput.setText("");
 				if (cv01Input != null) cv01Input.setText("");
 				if (cv02Input != null) cv02Input.setText("");
 				if (cv03Input != null) cv03Input.setText("");
@@ -690,6 +702,11 @@ public class EntityPane extends MapPane implements ListSelectionListener, Clipbo
 					try { order = Integer.parseInt(orderInput.getText()); }
 					catch (NumberFormatException err) { orderInput.setText("0"); }
 					entityList.iterator().next().setOrder(order);
+				} else if (charOffsetInput != null && src == charOffsetInput) {
+					int offset = 0;
+					try { offset = Integer.parseInt(charOffsetInput.getText()); }
+					catch (NumberFormatException err) { charOffsetInput.setText("0"); }
+					for (PxeEntry e : entityList) e.setCharOffset(offset);
 				} else if (cv01Input != null && src == cv01Input) {
 					int v = 0;
 					try { v = Integer.parseInt(cv01Input.getText()); }

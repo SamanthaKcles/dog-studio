@@ -83,7 +83,27 @@ public class MapInfo implements Changeable {
 
 	private PropertyChangeSupport pcs;
 
+	private byte pxeFormatVersion = 0;
 	private LinkedList<PxeEntry> pxeList;
+
+	private byte getPxeVersionToWrite() {
+		if (EditorApp.isCsdhOrEncoreMode()) {
+			if (pxeFormatVersion == 0x20) {
+				return 0x20;
+			}
+			if (pxeFormatVersion == 0x10 || pxeFormatVersion == 0) {
+				for (PxeEntry entry : pxeList) {
+					if (entry != null && entry.getCharOffset() != 0) {
+						return 0x20;
+					}
+				}
+			}
+		}
+		if (pxeFormatVersion == 0x10) {
+			return 0x10;
+		}
+		return 0;
+	}
 
 	public Iterator<PxeEntry> getPxeIterator() {
 		return pxeList.iterator();
@@ -177,7 +197,7 @@ public class MapInfo implements Changeable {
 		tileset = new File(directory + "/Stage/Prt" + d.getTileset() + exeData.getImgExtension()); //$NON-NLS-1$
 		iMan.addImage(tileset, 1);
 
-		bgImage = new File(directory + "/" + d.getBG() + exeData.getImgExtension()); //$NON-NLS-1$
+		bgImage = exeData.getBackgroundFile(d.getBG());
 		iMan.addImage(bgImage, 0);
 		npcImage1 = new File(directory + "/Npc/Npc" + d.getNPC1() + exeData.getImgExtension()); //$NON-NLS-1$
 		iMan.addImage(npcImage1, 1);
@@ -457,7 +477,8 @@ public class MapInfo implements Changeable {
 			hBuf.flip();
 			int nEnt;
 			ByteBuffer eBuf;
-			switch (hBuf.get(3)) {
+			pxeFormatVersion = hBuf.get(3);
+			switch (pxeFormatVersion) {
 			case 0: // original pxe
 				nEnt = hBuf.getShort(4);
 				eBuf = ByteBuffer.allocate(nEnt * 12 + 2);
@@ -512,6 +533,27 @@ public class MapInfo implements Changeable {
 					int pxeFlags = eBuf.getShort();
 					byte pxeLayer = eBuf.get();
 					PxeEntry p = new PxeEntry(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, pxeLayer);
+					p.filePos = i;
+					pxeList.add(p);
+				}
+				break;
+			case 0x20: // csdh pxe
+				nEnt = hBuf.getShort(4);
+				eBuf = ByteBuffer.allocate(nEnt * 15 + 2);
+				eBuf.order(ByteOrder.LITTLE_ENDIAN);
+				inChan.read(eBuf);
+				eBuf.flip();
+				eBuf.getShort();
+				for (int i = 0; i < nEnt; i++) {
+					int pxeX = eBuf.getShort();
+					int pxeY = eBuf.getShort();
+					int pxeFlagID = eBuf.getShort();
+					int pxeEvent = eBuf.getShort();
+					int pxeType = eBuf.getShort();
+					int pxeFlags = eBuf.getShort();
+					byte pxeLayer = eBuf.get();
+					int pxeCharOffset = eBuf.getShort();
+					PxeEntry p = new PxeEntry(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, pxeLayer, pxeCharOffset);
 					p.filePos = i;
 					pxeList.add(p);
 				}
@@ -613,6 +655,16 @@ public class MapInfo implements Changeable {
 		}
 
 		private byte layer;
+		private short charOffset;
+
+		public int getCharOffset() {
+			return charOffset;
+		}
+
+		public void setCharOffset(int num) {
+			charOffset = (short) num;
+			markChanged();
+		}
 
 		private int filePos;
 
@@ -646,6 +698,7 @@ public class MapInfo implements Changeable {
 			entityType = (short) pxeType;
 			flags = (short) pxeFlags;
 			layer = (byte) pxeLayer;
+			charOffset = 0;
 			filePos = -1;
 
 			inf = exeData.getEntityInfo(entityType);
@@ -653,6 +706,23 @@ public class MapInfo implements Changeable {
 				StrTools.msgBox("Warning! There is an entity on your map"
 						+ " with an ID that does not exist in the entity table <" + entityType + ">");
 			}
+		}
+
+		PxeEntry(int pxeX, int pxeY, int pxeFlagID, int pxeEvent, int pxeType, int pxeFlags, int pxeLayer,
+				int pxeCharOffset) {
+			this(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, pxeLayer);
+			charOffset = (short) pxeCharOffset;
+		}
+
+		PxeEntry(int pxeX, int pxeY, int pxeFlagID, int pxeEvent, int pxeType, int pxeFlags, int pxeLayer,
+				int pxeCharOffset, int cv1, int cv2, int cv3, int cv4, int cv5, int cv6) {
+			this(pxeX, pxeY, pxeFlagID, pxeEvent, pxeType, pxeFlags, pxeLayer, pxeCharOffset);
+			customValue01 = cv1;
+			customValue02 = cv2;
+			customValue03 = cv3;
+			customValue04 = cv4;
+			customValue05 = cv5;
+			customValue06 = cv6;
 		}
 
 		PxeEntry(int pxeX, int pxeY, int pxeFlagID, int pxeEvent, int pxeType, int pxeFlags, int pxeLayer,
@@ -668,7 +738,7 @@ public class MapInfo implements Changeable {
 
 		public PxeEntry clone() {
 			return new PxeEntry(this.xTile, this.yTile, this.flagID, this.eventNum, this.entityType, this.flags,
-					this.layer, this.customValue01, this.customValue02, this.customValue03,
+					this.layer, this.charOffset, this.customValue01, this.customValue02, this.customValue03,
 					this.customValue04, this.customValue05, this.customValue06);
 		}
 
@@ -694,6 +764,16 @@ public class MapInfo implements Changeable {
 					srcImg = iMan.getImg(tileset);
 				else if (tilesetNum == 0x10) // npc myChar
 					srcImg = iMan.getImg(exeData.getMyCharFile());
+				else if (EditorApp.isCsdhMode() && tilesetNum == 0x18 && exeData.getNpcChar() != null)
+					srcImg = iMan.getImg(exeData.getNpcChar());
+				else if (EditorApp.isCsdhMode() && tilesetNum == 0x19 && exeData.getNpcLord() != null)
+					srcImg = iMan.getImg(exeData.getNpcLord());
+				else if (EditorApp.isCsdhMode() && tilesetNum == 0x1C && exeData.getNpcBllg() != null)
+					srcImg = iMan.getImg(exeData.getNpcBllg());
+				else if (EditorApp.isCsdhMode() && tilesetNum == 0x1D && exeData.getNpcFam() != null)
+					srcImg = iMan.getImg(exeData.getNpcFam());
+				else if (EditorApp.isCsdhMode() && tilesetNum == 0x1F && exeData.getNpcEzr() != null)
+					srcImg = iMan.getImg(exeData.getNpcEzr());
 				else if (tilesetNum == 0x19 && exeData.getAutumnObjectsFile() != null)
 					srcImg = iMan.getImg(exeData.getAutumnObjectsFile());
 				else if (tilesetNum == 0x26 && exeData.getAutumnItemsFile() != null)
@@ -780,10 +860,19 @@ public class MapInfo implements Changeable {
 		}
 
 		public ByteBuffer toBuf() {
-			int size = 12;
-			// ! comment out for Tyrone's builds
-			// if (EditorApp.EDITOR_MODE >= 1)
-			// size++;
+			byte versionToWrite = MapInfo.this.getPxeVersionToWrite();
+			int size;
+			switch (versionToWrite) {
+			case 0x10:
+				size = 13;
+				break;
+			case 0x20:
+				size = 15;
+				break;
+			default:
+				size = 12;
+				break;
+			}
 			ByteBuffer retVal = ByteBuffer.allocate(size);
 			retVal.order(ByteOrder.LITTLE_ENDIAN);
 			retVal.putShort(xTile);
@@ -792,8 +881,12 @@ public class MapInfo implements Changeable {
 			retVal.putShort(eventNum);
 			retVal.putShort(entityType);
 			retVal.putShort(flags);
-			// if (EditorApp.EDITOR_MODE >= 1)
-			// retVal.put(layer);
+			if (versionToWrite == 0x10 || versionToWrite == 0x20) {
+				retVal.put(layer);
+			}
+			if (versionToWrite == 0x20) {
+				retVal.putShort(charOffset);
+			}
 			retVal.flip();
 			return retVal;
 		}
@@ -1148,7 +1241,8 @@ public class MapInfo implements Changeable {
 		// we can just use our pxaFile field for this, since that's already corrected for CS+
 		//File pxaFile = new File(exeData.getDataDirectory() + "/Stage/" + d.getTileset() + ".pxa"); //$NON-NLS-1$ //$NON-NLS-2$
 		byte[] pxmTag = { 'P', 'X', 'M', 0x10 };
-		byte[] pxeTag = { 'P', 'X', 'E', 0 };
+		byte pxeVersion = getPxeVersionToWrite();
+		byte[] pxeTag = { 'P', 'X', 'E', pxeVersion };
 		ByteBuffer headerBuf;
 		ByteBuffer mapBuf;
 
@@ -1267,7 +1361,7 @@ public class MapInfo implements Changeable {
 			Collections.sort(pxeList);
 			FileOutputStream out = new FileOutputStream(pxeFile);
 			FileChannel pxeChannel = out.getChannel();
-			byte[] pxeTagBytes = new byte[]{ 'P', 'X', 'E', 0 };
+			byte[] pxeTagBytes = new byte[]{ 'P', 'X', 'E', pxeVersion };
 			pxeChannel.write(ByteBuffer.wrap(pxeTagBytes));
 			ByteBuffer dumbBuf = ByteBuffer.allocate(4);
 			dumbBuf.order(ByteOrder.LITTLE_ENDIAN);
@@ -1303,6 +1397,8 @@ public class MapInfo implements Changeable {
 				e.printStackTrace();
 			}
 		}
+
+		pxeFormatVersion = pxeVersion;
 
 		// save the pxa
 		if (EditorApp.EDITOR_MODE != 2)

@@ -1,0 +1,11 @@
+name=Fancy Pink
+author=Sam & K
+description=Everyone loves a little love!
+theme=light
+
+panel-color=#eaa9da
+splash-color=#e67fae
+border-color=#ae598b
+map-outline=#ffffff
+tsc-tag-color=#ff00ff
+tsc-tag-background=#f0f0f0

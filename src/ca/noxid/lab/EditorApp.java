@@ -93,12 +93,24 @@ public class EditorApp extends JFrame implements ActionListener {
 	private static final String VER_NUM = ""; //$NON-NLS-1$
 	private static final String TITLE_STR = "Dog Studio" + VER_NUM;
 	private static final String ABOUT_STR = Messages.getString("EditorApp.1") + VER_NUM + "\n" + //$NON-NLS-1$ //$NON-NLS-2$
-			"By Noxid, Autumn, Enlight, Sam & K, and Open Source Contributors - 4/14/2026\n" + //$NON-NLS-1$
+			"By Noxid, Sam & K, Autumn, Enlight, and Others - 7/12/2026\n" + //$NON-NLS-1$
 			Messages.getString("EditorApp.4") + //$NON-NLS-1$
 			Messages.getString("EditorApp.5"); //$NON-NLS-1$
 
 	public static int EDITOR_MODE = 0;
 	public static int EDITOR_BITMAP_MODE = 0;
+	public static String EDITOR_CS_MODE = "CS";
+	private static final String PREF_EDITOR_CS_MODE = "editor_cs_mode";
+	private static final String DEFAULT_CS_MODE = "CS";
+	public static boolean isCsdhMode() {
+		return "CSDH".equalsIgnoreCase(EDITOR_CS_MODE);
+	}
+	public static boolean isEncoreMode() {
+		return "ENCORE".equalsIgnoreCase(EDITOR_CS_MODE);
+	}
+	public static boolean isCsdhOrEncoreMode() {
+		return isCsdhMode() || isEncoreMode();
+	}
 	/*
 	 * 0 = regular CS
 	 * 1 = CS w/ layers
@@ -277,6 +289,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
 			int savedMode       = prefs.getInt(PREF_EDITOR_MODE, 0);
 			int savedBitmapMode = prefs.getInt(PREF_EDITOR_BITMAP_MODE, 0);
+			String savedCsMode  = prefs.get(PREF_EDITOR_CS_MODE, DEFAULT_CS_MODE);
 
 			String javaExe = ProcessHandle.current().info().command()
 					.orElse(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
@@ -296,6 +309,7 @@ public class EditorApp extends JFrame implements ActionListener {
 			cmd.add(EditorApp.class.getName());
 			if (savedMode != 0)       cmd.add("MODE=" + savedMode);
 			if (savedBitmapMode != 0) cmd.add("BITMAPMODE=" + savedBitmapMode);
+			if (!DEFAULT_CS_MODE.equalsIgnoreCase(savedCsMode)) cmd.add("CS=" + savedCsMode);
 
 			new ProcessBuilder(cmd)
 					.inheritIO()
@@ -3308,6 +3322,11 @@ public class EditorApp extends JFrame implements ActionListener {
 
 	// Docking/undocking windows
 
+	public void setTilesetHoverTile(int tileId) {
+		String base = Messages.getString("EditorApp.60"); //$NON-NLS-1$
+		tilesetWindow.setTitle(tileId >= 0 ? base + " (" + tileId + ")" : base);
+	}
+
 	public void dockOrUndockTileset() {
 		showTileWindow = !showTileWindow;
 		switchPerspective(activePerspective);
@@ -3467,9 +3486,9 @@ public class EditorApp extends JFrame implements ActionListener {
 				JSplitPane tileSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tileScroll,
 						mapPanel.getPreviewPane());	// Get preview of selected tiles
 					// TODO: Auto-wrap tileset pane to tileset width (+19 pixels)
-				tileSplit.setDividerLocation(531); // Most tilesets are 256px wide, so that x2 + editor margins (19px) = 531
+				tileSplit.setDividerLocation(535); // Most tilesets are 256px wide, so that x2 + editor margins (19px) = 531
 				JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tileSplit, mapScroll);
-				mainSplit.setDividerLocation(100);	// Vertical split between tileset & map
+				mainSplit.setDividerLocation(145);	// Vertical split between tileset & map
 				mainContent = mainSplit;
 			} // if not showing helper window
 			break;
@@ -3693,11 +3712,19 @@ public class EditorApp extends JFrame implements ActionListener {
 
 				}
 			}
+			else if (s.startsWith("CS="))
+			{
+				String val = s.split("=", 2)[1];
+				if (val != null && !val.isEmpty()) {
+					EDITOR_CS_MODE = val;
+				}
+			}
 		}
 
 		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
 		prefs.putInt(PREF_EDITOR_MODE, EDITOR_MODE);
 		prefs.putInt(PREF_EDITOR_BITMAP_MODE, EDITOR_BITMAP_MODE);
+		prefs.put(PREF_EDITOR_CS_MODE, EDITOR_CS_MODE);
 
 		// https://blogs.oracle.com/nickstephen/entry/java_redirecting_system_out_and
 		// initialize logging to go to rolling log file
