@@ -60,7 +60,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 	private static List<String> equipList = getEquipList();
 	private static Set<String> eventEnders = loadEventEnders();
 	static {
-		if (EditorApp.isCsdhMode()) {
+		if (EditorApp.isColorAndKeyEnabled()) {
 			loadColorPresets();
 		}
 	}
@@ -436,7 +436,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		put('#', "Number");
 		put('.', "Ticks");
 		put('$', "String");
-		if (EditorApp.isCsdhMode()) {
+		if (EditorApp.isColorAndKeyEnabled()) {
 			put('c', "Color Preset");
 			put('k', "Key Item");
 		}
@@ -975,7 +975,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		}
 		// Color Preset
 		case 'c': {
-			if (!EditorApp.isCsdhMode()) {
+			if (!EditorApp.isColorAndKeyEnabled()) {
 				break;
 			}
 			try {
@@ -996,7 +996,7 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		}
 		// Key Item
 		case 'k': {
-			if (!EditorApp.isCsdhMode()) {
+			if (!EditorApp.isColorAndKeyEnabled()) {
 				break;
 			}
 			try {

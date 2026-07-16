@@ -111,6 +111,9 @@ public class EditorApp extends JFrame implements ActionListener {
 	public static boolean isCsdhOrEncoreMode() {
 		return isCsdhMode() || isEncoreMode();
 	}
+	public static boolean isColorAndKeyEnabled() {
+		return isCsdhMode() || EditorConfigDialog.isColorAndKeyEnabled();
+	}
 	/*
 	 * 0 = regular CS
 	 * 1 = CS w/ layers
@@ -564,20 +567,22 @@ public class EditorApp extends JFrame implements ActionListener {
 			prefs.put(PREF_RECENT, sb.toString());
 		}
 
-		// Write window sizes
-		File rectFile = new File("editor.rect"); //$NON-NLS-1$
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(rectFile));
-			Window[] wArray = { this, tilesetWindow, scriptWindow, helpWindow, entityWindow };
-			for (Window w : wArray) {
-				Point l = w.getLocation();
-				Dimension d = w.getSize();
-				out.write(l.x + " " + l.y + " "); //$NON-NLS-1$ //$NON-NLS-2$
-				out.write(d.width + " " + d.height + " "); //$NON-NLS-1$ //$NON-NLS-2$
+		if (!EditorConfigDialog.isEditorRectDisabled()) {
+			// Write window sizes
+			File rectFile = new File("editor.rect"); //$NON-NLS-1$
+			try {
+				BufferedWriter out = new BufferedWriter(new FileWriter(rectFile));
+				Window[] wArray = { this, tilesetWindow, scriptWindow, helpWindow, entityWindow };
+				for (Window w : wArray) {
+					Point l = w.getLocation();
+					Dimension d = w.getSize();
+					out.write(l.x + " " + l.y + " "); //$NON-NLS-1$ //$NON-NLS-2$
+					out.write(d.width + " " + d.height + " "); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -1354,23 +1359,25 @@ public class EditorApp extends JFrame implements ActionListener {
 		helpWindow.setLocation(parentPos);
 		helpWindow.setVisible(false);
 
-		// Attempt to remember last window sizes and positions
-		File winFile = new File("editor.rect"); //$NON-NLS-1$
-		try {
-			Scanner sc = new Scanner(winFile);
-			this.setLocation(sc.nextInt(), sc.nextInt());
-			this.setSize(sc.nextInt(), sc.nextInt());
-			tilesetWindow.setLocation(sc.nextInt(), sc.nextInt());
-			tilesetWindow.setSize(sc.nextInt(), sc.nextInt());
-			scriptWindow.setLocation(sc.nextInt(), sc.nextInt());
-			scriptWindow.setSize(sc.nextInt(), sc.nextInt());
-			helpWindow.setLocation(sc.nextInt(), sc.nextInt());
-			helpWindow.setSize(sc.nextInt(), sc.nextInt());
-			entityWindow.setLocation(sc.nextInt(), sc.nextInt());
-			entityWindow.setSize(sc.nextInt(), sc.nextInt());
-			sc.close();
-		} catch (Exception e1) {
-			// do nothing
+		if (!EditorConfigDialog.isEditorRectDisabled()) {
+			// Attempt to remember last window sizes and positions
+			File winFile = new File("editor.rect"); //$NON-NLS-1$
+			try {
+				Scanner sc = new Scanner(winFile);
+				this.setLocation(sc.nextInt(), sc.nextInt());
+				this.setSize(sc.nextInt(), sc.nextInt());
+				tilesetWindow.setLocation(sc.nextInt(), sc.nextInt());
+				tilesetWindow.setSize(sc.nextInt(), sc.nextInt());
+				scriptWindow.setLocation(sc.nextInt(), sc.nextInt());
+				scriptWindow.setSize(sc.nextInt(), sc.nextInt());
+				helpWindow.setLocation(sc.nextInt(), sc.nextInt());
+				helpWindow.setSize(sc.nextInt(), sc.nextInt());
+				entityWindow.setLocation(sc.nextInt(), sc.nextInt());
+				entityWindow.setSize(sc.nextInt(), sc.nextInt());
+				sc.close();
+			} catch (Exception e1) {
+				// do nothing
+			}
 		}
 
 		if (ResourceManager.cursor != null) {

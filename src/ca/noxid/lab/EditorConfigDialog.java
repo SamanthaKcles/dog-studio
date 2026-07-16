@@ -23,6 +23,8 @@ public class EditorConfigDialog extends JDialog {
 	private static final String PREF_WARN_SCRIPT_ERRORS = "warn_script_errors";
 	private static final String PREF_WARN_UNRECOGNIZED_COMMANDS = "warn_unrecognized_commands";
 	private static final String PREF_AUTUMNAL_LAB = "autumnal_lab";
+	private static final String PREF_ENABLE_CK = "enable_ck";
+	private static final String PREF_DISABLE_EDITOR_RECT = "disable_editor_rect";
 	private static final String PREF_SCROLL_SPEED = "scroll_speed";
 
 	public static String getScrollSpeed() {
@@ -81,6 +83,26 @@ public class EditorConfigDialog extends JDialog {
 	private static void setAutumnalLabEnabled(boolean enabled) {
 		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
 		prefs.putBoolean(PREF_AUTUMNAL_LAB, enabled);
+	}
+
+	public static boolean isColorAndKeyEnabled() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_ENABLE_CK, false);
+	}
+
+	private static void setColorAndKeyEnabled(boolean enabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_ENABLE_CK, enabled);
+	}
+
+	public static boolean isEditorRectDisabled() {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		return prefs.getBoolean(PREF_DISABLE_EDITOR_RECT, false);
+	}
+
+	private static void setEditorRectDisabled(boolean disabled) {
+		Preferences prefs = Preferences.userNodeForPackage(EditorApp.class);
+		prefs.putBoolean(PREF_DISABLE_EDITOR_RECT, disabled);
 	}
 
 	private JList<String> categoryList;
@@ -265,6 +287,29 @@ public class EditorConfigDialog extends JDialog {
 		});
 		panel.add(autumnalLabCheck, c);
 
+		c.gridy++;
+		JCheckBox colorAndKeyCheck = new JCheckBox("Color Presets & Key Items");
+		colorAndKeyCheck.setOpaque(false);
+		if (EditorApp.isCsdhMode()) {
+			colorAndKeyCheck.setSelected(true);
+			colorAndKeyCheck.setEnabled(false);
+			colorAndKeyCheck.setToolTipText("Bro");
+		} else {
+			colorAndKeyCheck.setSelected(isColorAndKeyEnabled());
+			colorAndKeyCheck.addActionListener(e -> {
+				setColorAndKeyEnabled(colorAndKeyCheck.isSelected());
+				markRestartRequired();
+			});
+		}
+		panel.add(colorAndKeyCheck, c);
+
+		c.gridy++;
+		JCheckBox disableEditorRectCheck = new JCheckBox("Disable Editor.rect");
+		disableEditorRectCheck.setOpaque(false);
+		disableEditorRectCheck.setSelected(isEditorRectDisabled());
+		disableEditorRectCheck.addActionListener(e -> setEditorRectDisabled(disableEditorRectCheck.isSelected()));
+		panel.add(disableEditorRectCheck, c);
+
 		// lethrys slop
 		JPanel scrollPanel = new JPanel();
 		scrollPanel.setOpaque(false);
@@ -307,13 +352,13 @@ public class EditorConfigDialog extends JDialog {
 		sc.insets  = new Insets(10, 20, 4, 10);
 		sc.gridx   = 1;
 		sc.gridy   = 0;
-		sc.gridheight = 4;
+		sc.gridheight = 5;
 		sc.weightx = 1.0;
 		sc.weighty = 0;
 		panel.add(scrollPanel, sc);
 
 		c.gridx = 0;
-		c.gridy = 5;
+		c.gridy = 6;
 		c.gridwidth = 2;
 		c.weighty = 1.0;
 		c.fill = GridBagConstraints.VERTICAL;

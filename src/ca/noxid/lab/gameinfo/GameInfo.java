@@ -194,9 +194,11 @@ public class GameInfo {
 		npcSymFile = ResourceManager.checkBase(npcSymFile);
 		itemImageFile = new File(dataDir + "/ItemImage" + imageExtension); //$NON-NLS-1$
 		itemImageFile = ResourceManager.checkBase(itemImageFile);
-		if (EditorApp.isCsdhMode()) {
+		if (EditorApp.isColorAndKeyEnabled()) {
 			keyItemImageFile = new File(dataDir + "/KeyImage" + imageExtension); //$NON-NLS-1$
 			keyItemImageFile = ResourceManager.checkBase(keyItemImageFile);
+		}
+		if (EditorApp.isCsdhMode()) {
 			npcCharFile = new File(dataDir + "/Npc/NpcChar" + imageExtension); //$NON-NLS-1$
 			npcCharFile = ResourceManager.checkBase(npcCharFile);
 			npcLordFile = new File(dataDir + "/Npc/NpcLord" + imageExtension); //$NON-NLS-1$
