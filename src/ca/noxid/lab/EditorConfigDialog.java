@@ -119,6 +119,7 @@ public class EditorConfigDialog extends JDialog {
 	private JTextArea descArea;
 	private Map<String, TscCommandData> tscCommands;
 	private boolean loadingTscDetails = false;
+	private boolean hasUnknownOperandTypes = false;
 
 	private boolean requiresRestart = false;
 
@@ -134,11 +135,21 @@ public class EditorConfigDialog extends JDialog {
 	private List<String> musicListSnapshot;
 	private List<String> sfxListSnapshot;
 	
-	private static final String[] ID_TYPES = {
-		"None", "Arms", "Ammo", "Direction", "Event", "Equip", "Face", "Flag", 
-		"Graphic", "Illustration", "Item", "Map", "Music", "NPC (specific)", 
+	private static final String[] BASE_ID_TYPES = {
+		"None", "Arms", "Ammo", "Direction", "Event", "Equip", "Face", "Flag",
+		"Graphic", "Illustration", "Item", "Map", "Music", "NPC (specific)",
 		"NPC Type", "Sound", "Tile", "X Coord", "Y Coord", "Number", "Ticks", "String"
 	};
+
+	private static String[] getIdTypesForCurrentMode() {
+		if (!EditorApp.isColorAndKeyEnabled()) {
+			return BASE_ID_TYPES;
+		}
+		String[] extended = Arrays.copyOf(BASE_ID_TYPES, BASE_ID_TYPES.length + 2);
+		extended[BASE_ID_TYPES.length] = "Color Preset";
+		extended[BASE_ID_TYPES.length + 1] = "Key Item";
+		return extended;
+	}
 	
 	public EditorConfigDialog(Frame parent, ResourceManager iMan) {
 		super(parent, "Editor Configuration", true);
@@ -178,6 +189,8 @@ public class EditorConfigDialog extends JDialog {
 		contentPanel.setPreferredSize(new Dimension(600, 400));
 		
 		initializePanels();
+		promptUnknownOperandTypesIfNeeded();
+		snapshotOriginalState();
 		
 		add(contentPanel, BorderLayout.CENTER);
 		
@@ -197,9 +210,11 @@ public class EditorConfigDialog extends JDialog {
 							"Changes saved. A restart is required for some changes to take effect. Restart now?",
 							"Restart required",
 							JOptionPane.YES_NO_OPTION);
-					dispose();
 					if (restartResult == JOptionPane.YES_OPTION) {
+						dispose();
 						EditorApp.restartApplication();
+					} else {
+						JOptionPane.showMessageDialog(this, "Changes saved. Restart later to apply restart-required changes.", "Saved", JOptionPane.INFORMATION_MESSAGE);
 					}
 				} else {
 					JOptionPane.showMessageDialog(this, "Changes saved.", "Saved", JOptionPane.INFORMATION_MESSAGE);
@@ -237,7 +252,44 @@ public class EditorConfigDialog extends JDialog {
 		contentPanel.add(createSimpleListPanel("Equip List", "equipList.txt"), "Equip List");
 		contentPanel.add(createSimpleListPanel("Map Bosses", "mapBosses.txt"), "Map Bosses");
 		contentPanel.add(createSimpleListPanel("Background Types", "backgroundTypes.txt"), "Background Types");
-		snapshotOriginalState();
+	}
+
+	private void promptUnknownOperandTypesIfNeeded() {
+		if (!hasUnknownOperandTypes) return;
+		int result = JOptionPane.showConfirmDialog(
+				this,
+				"Warning! Your tsc_list has unrecognized op. types! Do you want to overwrite unknown values?",
+				"Unrecognized Operand Types",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.WARNING_MESSAGE);
+		if (result == JOptionPane.YES_OPTION) {
+			overwriteUnknownOperandTypes();
+			try {
+				saveTscCommands();
+				markRestartRequired();
+				if (tscCommandList != null && tscCommandList.getSelectedValue() != null) {
+					loadTscCommandDetails(tscCommandList.getSelectedValue());
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(this, "Error overwriting unknown operand values: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	private void overwriteUnknownOperandTypes() {
+		for (TscCommandData data : tscCommands.values()) {
+			for (int i = 0; i < 6; i++) {
+				if (i < data.ops && data.unknownIds[i]) {
+					if (data.ids[i] == null || data.ids[i].trim().isEmpty() || "None".equals(data.ids[i])) {
+						data.ids[i] = "Number";
+					}
+					data.unknownIds[i] = false;
+					if (data.unknownRawIds != null) data.unknownRawIds[i] = '\0';
+				}
+			}
+		}
+		hasUnknownOperandTypes = false;
 	}
 	
 	private void switchCategory(String category) {
@@ -413,7 +465,9 @@ public class EditorConfigDialog extends JDialog {
 					data.name = cmd;
 					data.ops = 0;
 					data.ids = new String[6];
-					Arrays.fill(data.ids, "");
+					data.unknownIds = new boolean[6];
+					data.unknownRawIds = new char[6];
+					Arrays.fill(data.ids, "None");
 					data.abb = "";
 					data.desc = "";
 					tscCommands.put(cmd, data);
@@ -476,14 +530,15 @@ public class EditorConfigDialog extends JDialog {
 		c.gridx = 1; c.gridwidth = 2;
 		JPanel idsPanel = new JPanel(new GridLayout(2, 3, 5, 5));
 		idCombos = new JComboBox[6];
+		String[] idTypes = getIdTypesForCurrentMode();
 		String[] idLabels = {"W", "X", "Y", "Z", "Q", "R"};
 		for (int i = 0; i < 6; i++) {
 			final int idx = i;
-			idCombos[i] = new JComboBox<>(ID_TYPES);
+			idCombos[i] = new JComboBox<>(idTypes);
 			idCombos[i].setRenderer(new DefaultListCellRenderer() {
 				@Override
 				public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-					if (value != null && value.equals("None")) {
+					if (index == -1 && value != null && value.equals("None")) {
 						value = idLabels[idx] + idLabels[idx] + idLabels[idx] + idLabels[idx];
 					}
 					return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -833,15 +888,19 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void loadTscCommands() {
-		File fileToLoad = isAutumnalLabEnabled() ? new File("aut/tsc_list.txt") : new File("tsc_list.txt");
+		File fileToLoad = getEditorFile(isAutumnalLabEnabled() ? "aut/tsc_list.txt" : "tsc_list.txt");
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(fileToLoad))) {
 			String line;
 			boolean inCommands = false;
+			hasUnknownOperandTypes = false;
 			while ((line = br.readLine()) != null) {
-				if (line.startsWith("[CE_TSC]")) {
+				if (line.startsWith("[CE_TSC]") || line.startsWith("[BL_TSC]")) {
 					inCommands = true;
 					continue;
+				}
+				if (inCommands && line.startsWith("[")) {
+					break;
 				}
 				if (inCommands && line.startsWith("<")) {
 					String[] parts = line.split("\\t");
@@ -851,6 +910,8 @@ public class EditorConfigDialog extends JDialog {
 						data.ops = Integer.parseInt(parts[1]);
 						data.abb = parts[3];
 						data.desc = parts[4];
+						data.unknownIds = new boolean[6];
+						data.unknownRawIds = new char[6];
 						
 						// Parse IDs
 						String idStr = parts[2];
@@ -858,6 +919,11 @@ public class EditorConfigDialog extends JDialog {
 						for (int i = 0; i < 6 && i < idStr.length(); i++) {
 							char c = idStr.charAt(i);
 							data.ids[i] = charToIdType(c);
+							if (i < data.ops && isUnknownOperandIdChar(c)) {
+								data.unknownIds[i] = true;
+								data.unknownRawIds[i] = c;
+								hasUnknownOperandTypes = true;
+							}
 						}
 						for (int i = idStr.length(); i < 6; i++) {
 							data.ids[i] = "";
@@ -895,6 +961,8 @@ public class EditorConfigDialog extends JDialog {
 			case '#': return "Number";
 			case '.': return "Ticks";
 			case '$': return "String";
+			case 'c': return "Color Preset";
+			case 'k': return "Key Item";
 			default: return "None";
 		}
 	}
@@ -923,6 +991,8 @@ public class EditorConfigDialog extends JDialog {
 			case "Number": return '#';
 			case "Ticks": return '.';
 			case "String": return '$';
+			case "Color Preset": return 'c';
+			case "Key Item": return 'k';
 			default: return '-';
 		}
 	}
@@ -935,10 +1005,12 @@ public class EditorConfigDialog extends JDialog {
 			nameField.setText(data.name);
 			opsCombo.setSelectedItem(data.ops);
 			for (int i = 0; i < 6; i++) {
-				if (data.ids[i] != null && !data.ids[i].isEmpty()) {
+				if (data.unknownIds != null && data.unknownIds[i]) {
+					idCombos[i].setSelectedItem("None");
+				} else if (data.ids[i] != null && !data.ids[i].isEmpty()) {
 					idCombos[i].setSelectedItem(data.ids[i]);
 				} else {
-					idCombos[i].setSelectedIndex(0);
+					idCombos[i].setSelectedItem(i < data.ops ? "Number" : "None");
 				}
 			}
 			abbField.setText(data.abb);
@@ -965,6 +1037,10 @@ public class EditorConfigDialog extends JDialog {
 		data.ops = ops;
 		for (int i = 0; i < 6; i++) {
 			data.ids[i] = (String) idCombos[i].getSelectedItem();
+			if (data.unknownIds != null && (data.ids[i] != null && !"None".equals(data.ids[i]))) {
+				data.unknownIds[i] = false;
+				if (data.unknownRawIds != null) data.unknownRawIds[i] = '\0';
+			}
 		}
 		data.abb = abb;
 		data.desc = desc;
@@ -975,7 +1051,12 @@ public class EditorConfigDialog extends JDialog {
 		int ops = (Integer) opsCombo.getSelectedItem();
 		for (int i = 0; i < 6; i++) {
 			idCombos[i].setEnabled(i < ops);
-			if (i >= ops) {
+			if (i < ops) {
+				Object selected = idCombos[i].getSelectedItem();
+				if (!loadingTscDetails && (selected == null || "None".equals(selected) || "".equals(selected))) {
+					idCombos[i].setSelectedItem("Number");
+				}
+			} else {
 				idCombos[i].setSelectedItem("None");
 			}
 		}
@@ -1085,7 +1166,8 @@ public class EditorConfigDialog extends JDialog {
 				throw new IOException("Command " + data.name + " has empty description");
 			}
 			for (int i = 0; i < data.ops; i++) {
-				if (data.ids[i] == null || data.ids[i].equals("None")) {
+				boolean unresolvedUnknown = data.unknownIds != null && data.unknownIds[i];
+				if (!unresolvedUnknown && (data.ids[i] == null || data.ids[i].equals("None"))) {
 					throw new IOException("Command " + data.name + " has unset ID types");
 				}
 			}
@@ -1094,20 +1176,25 @@ public class EditorConfigDialog extends JDialog {
 		List<String> sortedCommands = new ArrayList<>(tscCommands.keySet());
 		Collections.sort(sortedCommands);
 		boolean autMode = isAutumnalLabEnabled();
-		File targetFile = autMode ? new File("aut/tsc_list.txt") : new File("tsc_list.txt");
+		File targetFile = getEditorFile(autMode ? "aut/tsc_list.txt" : "tsc_list.txt");
 		if (autMode) targetFile.getParentFile().mkdirs();
 		
 		List<String> header = new ArrayList<>();
+		String headerTag = null;
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(targetFile))) {
 			String line;
 			while ((line = br.readLine()) != null) {
-				if (line.startsWith("[CE_TSC]")) {
-					header.add("[CE_TSC]\t" + tscCommands.size());
+				if (line.startsWith("[CE_TSC]") || line.startsWith("[BL_TSC]")) {
+					headerTag = line.startsWith("[BL_TSC]") ? "[BL_TSC]" : "[CE_TSC]";
+					header.add(headerTag + "\t" + tscCommands.size());
 					break;
 				}
 				header.add(line);
 			}
+		}
+		if (headerTag == null) {
+			header.add("[CE_TSC]\t" + tscCommands.size());
 		}
 		
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile))) {
@@ -1120,7 +1207,11 @@ public class EditorConfigDialog extends JDialog {
 				TscCommandData data = tscCommands.get(cmdName);
 				StringBuilder idStr = new StringBuilder();
 				for (int i = 0; i < data.ops; i++) {
-					idStr.append(idTypeToChar(data.ids[i]));
+					char typeChar = idTypeToChar(data.ids[i]);
+					if (typeChar == '-' && data.unknownIds != null && data.unknownIds[i]) {
+						typeChar = (data.unknownRawIds != null && data.unknownRawIds[i] != '\0') ? data.unknownRawIds[i] : '?';
+					}
+					idStr.append(typeChar);
 				}
 				for (int i = data.ops; i < 6; i++) {
 					idStr.append('-');
@@ -1134,7 +1225,7 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void saveMusicList() throws IOException {
-		File targetFile = new File("musiclist.txt");
+		File targetFile = getEditorFile("musiclist.txt");
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile))) {
 			for (int i = 0; i < musicListModel.size(); i++) {
 				bw.write(musicListModel.get(i));
@@ -1144,7 +1235,7 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void saveSfxList() throws IOException {
-		File targetFile = new File("sfxList.txt");
+		File targetFile = getEditorFile("sfxList.txt");
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile))) {
 			for (int i = 0; i < sfxListModel.size(); i++) {
 				bw.write(sfxListModel.get(i));
@@ -1154,7 +1245,7 @@ public class EditorConfigDialog extends JDialog {
 	}
 	
 	private void saveSimpleList(String filename, DefaultListModel<String> model) throws IOException {
-		File targetFile = new File(filename);
+		File targetFile = getEditorFile(filename);
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile))) {
 			for (int i = 0; i < model.size(); i++) {
 				bw.write(model.get(i));
@@ -1162,11 +1253,32 @@ public class EditorConfigDialog extends JDialog {
 			}
 		}
 	}
+
+	private File getEditorFile(String filename) {
+		try {
+			String jarPath = EditorConfigDialog.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+			File jarFile = new File(jarPath);
+			File jarDir = jarFile.isDirectory() ? jarFile : jarFile.getParentFile();
+			return new File(jarDir, filename);
+		} catch (Exception e) {
+			return new File(filename);
+		}
+	}
+
+	private boolean isUnknownOperandIdChar(char c) {
+		return c != '-' &&
+				c != 'a' && c != 'A' && c != 'd' && c != 'e' && c != 'E' && c != 'f' &&
+				c != 'F' && c != 'g' && c != 'l' && c != 'i' && c != 'm' && c != 'u' &&
+				c != 'N' && c != 'n' && c != 's' && c != 't' && c != 'x' && c != 'y' &&
+				c != '#' && c != '.' && c != '$' && c != 'c' && c != 'k';
+	}
 	private static TscCommandData copyTscCommandData(TscCommandData src) {
 		TscCommandData copy = new TscCommandData();
 		copy.name = src.name;
 		copy.ops  = src.ops;
 		copy.ids  = Arrays.copyOf(src.ids, src.ids.length);
+		copy.unknownIds = src.unknownIds == null ? new boolean[6] : Arrays.copyOf(src.unknownIds, src.unknownIds.length);
+		copy.unknownRawIds = src.unknownRawIds == null ? new char[6] : Arrays.copyOf(src.unknownRawIds, src.unknownRawIds.length);
 		copy.abb  = src.abb;
 		copy.desc = src.desc;
 		return copy;
@@ -1201,6 +1313,8 @@ public class EditorConfigDialog extends JDialog {
 		String name;
 		int ops;
 		String[] ids;
+		boolean[] unknownIds;
+		char[] unknownRawIds;
 		String abb;
 		String desc;
 	}

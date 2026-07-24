@@ -1989,8 +1989,20 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 			String jarPath = TscPane.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
 			File jarFile = new File(jarPath);
 			File jarDir = jarFile.isDirectory() ? jarFile : jarFile.getParentFile();
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				File autFile = new File(new File(jarDir, "aut"), filename);
+				if (autFile.exists()) {
+					return autFile;
+				}
+			}
 			return new File(jarDir, filename);
 		} catch (Exception e) {
+			if (EditorConfigDialog.isAutumnalLabEnabled()) {
+				File autFile = new File("aut", filename);
+				if (autFile.exists()) {
+					return autFile;
+				}
+			}
 			return new File(filename);
 		}
 	}
