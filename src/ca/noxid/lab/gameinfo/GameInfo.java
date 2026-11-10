@@ -121,7 +121,7 @@ public class GameInfo {
 	public File getBase() {
 		return base;
 	}
-	
+
 	public GameInfo(File base) throws IOException {
 		this.base = base;
 		mapdataStore = new Vector<>();

@@ -142,7 +142,7 @@ public class EditorConfigDialog extends JDialog {
 	private JPanel contentPanel;
 	private ResourceManager iMan;
 	private CardLayout cardLayout;
-	
+
 	private JList<String> tscCommandList;
 	private DefaultListModel<String> tscListModel;
 	private JTextField nameField;
@@ -167,7 +167,7 @@ public class EditorConfigDialog extends JDialog {
 	private Map<String, TscCommandData> tscCommandsSnapshot;
 	private List<String> musicListSnapshot;
 	private List<String> sfxListSnapshot;
-	
+
 	private static final String[] BASE_ID_TYPES = {
 		"None", "Arms", "Ammo", "Direction", "Event", "Equip", "Face", "Flag",
 		"Graphic", "Illustration", "Item", "Map", "Music", "NPC (specific)",
@@ -183,14 +183,14 @@ public class EditorConfigDialog extends JDialog {
 		extended[BASE_ID_TYPES.length + 1] = "Key Item";
 		return extended;
 	}
-	
+
 	public EditorConfigDialog(Frame parent, ResourceManager iMan) {
 		super(parent, "Editor Configuration", true);
 		this.iMan = iMan;
 		if (ResourceManager.cursor != null) this.setCursor(ResourceManager.cursor);
-		
+
 		setLayout(new BorderLayout());
-		
+
 		String[] categories = {"General Config", "TSC Commands", "End Commands", "Music List", "SFX List", "Equip List", "Map Bosses", "Background Types"};
 		categoryList = new JList<>(categories);
 		categoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -202,7 +202,7 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		JPanel leftPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints lc = new GridBagConstraints();
 		lc.gridx = 0;
@@ -216,23 +216,23 @@ public class EditorConfigDialog extends JDialog {
 		leftScroll.setPreferredSize(new Dimension(130, 120));
 		leftPanel.add(leftScroll, lc);
 		add(leftPanel, BorderLayout.WEST);
-		
+
 		cardLayout = new CardLayout();
 		contentPanel = new JPanel(cardLayout);
 		contentPanel.setPreferredSize(new Dimension(600, 400));
-		
+
 		initializePanels();
 		promptUnknownOperandTypesIfNeeded();
 		snapshotOriginalState();
-		
+
 		add(contentPanel, BorderLayout.CENTER);
-		
+
 		JPanel bottomPanel = new JPanel(new BorderLayout());
-		
+
 		JPanel buttonPanel = new JPanel();
 		JButton saveButton = new JButton("Save");
 		JButton closeButton = new JButton("Cancel");
-		
+
 		saveButton.addActionListener(e -> {
 			int result = JOptionPane.showConfirmDialog(this, "Save all changes?", "Confirm Save", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
@@ -255,7 +255,7 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		closeButton.addActionListener(e -> {
 			int result = JOptionPane.showConfirmDialog(this, "Discard all unsaved changes?", "Confirm Cancel", JOptionPane.YES_NO_OPTION);
 			if (result == JOptionPane.YES_OPTION) {
@@ -263,19 +263,19 @@ public class EditorConfigDialog extends JDialog {
 				dispose();
 			}
 		});
-		
+
 		buttonPanel.add(saveButton);
 		buttonPanel.add(closeButton);
 		bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		add(bottomPanel, BorderLayout.SOUTH);
-		
+
 		pack();
 		setSize(800, 600);
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
-	
+
 	private void initializePanels() {
 		contentPanel.add(createGeneralConfigPanel(), "General Config");
 		contentPanel.add(createTscCommandPanel(), "TSC Commands");
@@ -324,7 +324,7 @@ public class EditorConfigDialog extends JDialog {
 		}
 		hasUnknownOperandTypes = false;
 	}
-	
+
 	private void switchCategory(String category) {
 		if (category != null) {
 			cardLayout.show(contentPanel, category);
@@ -533,10 +533,10 @@ public class EditorConfigDialog extends JDialog {
 	private JPanel createTscCommandPanel() {
 		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
 		panel.setLayout(new BorderLayout());
-		
+
 		tscCommands = new LinkedHashMap<>();
 		loadTscCommands();
-		
+
 		tscListModel = new DefaultListModel<>();
 		for (String cmd : tscCommands.keySet()) {
 			tscListModel.addElement(cmd);
@@ -553,19 +553,19 @@ public class EditorConfigDialog extends JDialog {
 				loadTscCommandDetails(tscCommandList.getSelectedValue());
 			}
 		});
-		
+
 		JPanel listPanel = new JPanel(new BorderLayout());
 		JScrollPane tscScrollPane = new JScrollPane(tscCommandList);
 		tscScrollPane.setPreferredSize(new Dimension(200, 400));
 		listPanel.add(tscScrollPane, BorderLayout.CENTER);
-		
+
 		JPanel listButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
 		JButton addButton = new JButton("Add");
 		JButton deleteButton = new JButton("Delete");
 		Dimension btnSize = new Dimension(95, 25);
 		addButton.setPreferredSize(btnSize);
 		deleteButton.setPreferredSize(btnSize);
-		
+
 		addButton.addActionListener(e -> {
 			String cmd = JOptionPane.showInputDialog(this, "Enter 3-character command (e.g., ABC):");
 			if (cmd != null && cmd.length() == 3) {
@@ -581,7 +581,7 @@ public class EditorConfigDialog extends JDialog {
 					data.abb = "";
 					data.desc = "";
 					tscCommands.put(cmd, data);
-					
+
 					int index = 0;
 					for (int i = 0; i < tscListModel.size(); i++) {
 						if (cmd.compareTo(tscListModel.get(i)) < 0) {
@@ -597,7 +597,7 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		deleteButton.addActionListener(e -> {
 			String selected = tscCommandList.getSelectedValue();
 			if (selected != null) {
@@ -608,33 +608,33 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		listButtonPanel.add(addButton);
 		listButtonPanel.add(deleteButton);
 		listPanel.add(listButtonPanel, BorderLayout.SOUTH);
-		
+
 		panel.add(listPanel, BorderLayout.WEST);
-		
+
 		JPanel detailsPanel = new JPanel();
 		detailsPanel.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
 		c.anchor = GridBagConstraints.WEST;
 		c.insets = new Insets(5, 5, 5, 5);
 		c.fill = GridBagConstraints.HORIZONTAL;
-		
+
 		c.gridx = 0; c.gridy = 0;
 		detailsPanel.add(new JLabel("Name"), c);
 		c.gridx = 1; c.gridwidth = 2;
 		nameField = new JTextField(20);
 		detailsPanel.add(nameField, c);
-		
+
 		c.gridx = 0; c.gridy = 1; c.gridwidth = 1;
 		detailsPanel.add(new JLabel("Ops."), c);
 		c.gridx = 1;
 		opsCombo = new JComboBox<>(new Integer[]{0, 1, 2, 3, 4, 5, 6});
 		opsCombo.addActionListener(e -> updateIdComboStates());
 		detailsPanel.add(opsCombo, c);
-		
+
 		c.gridx = 0; c.gridy = 2;
 		detailsPanel.add(new JLabel("IDs"), c);
 		c.gridx = 1; c.gridwidth = 2;
@@ -657,13 +657,13 @@ public class EditorConfigDialog extends JDialog {
 			idsPanel.add(idCombos[i]);
 		}
 		detailsPanel.add(idsPanel, c);
-		
+
 		c.gridx = 0; c.gridy = 3; c.gridwidth = 1;
 		detailsPanel.add(new JLabel("Abb."), c);
 		c.gridx = 1; c.gridwidth = 2;
 		abbField = new JTextField(20);
 		detailsPanel.add(abbField, c);
-		
+
 		c.gridx = 0; c.gridy = 4; c.gridwidth = 1;
 		detailsPanel.add(new JLabel("Description"), c);
 		c.gridx = 1; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.weighty = 1.0;
@@ -671,7 +671,7 @@ public class EditorConfigDialog extends JDialog {
 		descArea.setLineWrap(true);
 		descArea.setWrapStyleWord(true);
 		detailsPanel.add(new JScrollPane(descArea), c);
-		
+
 		javax.swing.event.DocumentListener tscAutoSave = new javax.swing.event.DocumentListener() {
 			public void insertUpdate(javax.swing.event.DocumentEvent e) { saveTscCommandDetails(); }
 			public void removeUpdate(javax.swing.event.DocumentEvent e) { saveTscCommandDetails(); }
@@ -684,16 +684,16 @@ public class EditorConfigDialog extends JDialog {
 		for (JComboBox<String> idCombo : idCombos) {
 			idCombo.addActionListener(e -> saveTscCommandDetails());
 		}
-		
+
 		panel.add(new JScrollPane(detailsPanel), BorderLayout.CENTER);
-		
+
 		return panel;
 	}
-	
+
 	private JPanel createMusicListPanel() {
 		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
 		panel.setLayout(new BorderLayout());
-		
+
 		musicListModel = new DefaultListModel<>();
 		loadMusicList();
 		musicListModel.addListDataListener(new javax.swing.event.ListDataListener() {
@@ -701,13 +701,13 @@ public class EditorConfigDialog extends JDialog {
 			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
 			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
 		});
-		
+
 		JList<String> list = new JList<>(musicListModel);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
-		
+
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-		
+
 		JTextField nameField = new JTextField(30);
 		Dimension fieldSize = new Dimension(300, 25);
 		nameField.setMaximumSize(fieldSize);
@@ -718,7 +718,7 @@ public class EditorConfigDialog extends JDialog {
 		rightPanel.add(songLabel);
 		rightPanel.add(nameField);
 		rightPanel.add(Box.createVerticalStrut(10));
-		
+
 		JButton addNew = new JButton("Add");
 		JButton delete = new JButton("Delete");
 		JButton moveUp = new JButton("Move Up");
@@ -736,7 +736,7 @@ public class EditorConfigDialog extends JDialog {
 		moveDown.setPreferredSize(btnSize);
 		moveDown.setMaximumSize(btnSize);
 		moveDown.setAlignmentX(Component.LEFT_ALIGNMENT);
-		
+
 		final boolean[] updatingFromSelection = {false};
 		list.addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting() && list.getSelectedIndex() >= 0) {
@@ -760,7 +760,7 @@ public class EditorConfigDialog extends JDialog {
 			public void removeUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 			public void changedUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 		});
-		
+
 		addNew.addActionListener(e -> {
 			String name = JOptionPane.showInputDialog(this, "Enter song name:");
 			if (name != null && !name.trim().isEmpty()) {
@@ -770,7 +770,7 @@ public class EditorConfigDialog extends JDialog {
 				list.setSelectedIndex(idx);
 			}
 		});
-		
+
 		delete.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx >= 0) {
@@ -786,7 +786,7 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		moveUp.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx > 0) {
@@ -796,7 +796,7 @@ public class EditorConfigDialog extends JDialog {
 				rebuildMusicList();
 			}
 		});
-		
+
 		moveDown.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx >= 0 && idx < musicListModel.size() - 1) {
@@ -806,7 +806,7 @@ public class EditorConfigDialog extends JDialog {
 				rebuildMusicList();
 			}
 		});
-		
+
 		rightPanel.add(addNew);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(delete);
@@ -814,16 +814,16 @@ public class EditorConfigDialog extends JDialog {
 		rightPanel.add(moveUp);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(moveDown);
-		
+
 		panel.add(rightPanel, BorderLayout.EAST);
-		
+
 		return panel;
 	}
-	
+
 	private JPanel createSfxListPanel() {
 		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
 		panel.setLayout(new BorderLayout());
-		
+
 		sfxListModel = new DefaultListModel<>();
 		loadSfxList();
 		sfxListModel.addListDataListener(new javax.swing.event.ListDataListener() {
@@ -831,13 +831,13 @@ public class EditorConfigDialog extends JDialog {
 			public void intervalRemoved(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
 			public void contentsChanged(javax.swing.event.ListDataEvent e) { markRestartRequired(); }
 		});
-		
+
 		JList<String> list = new JList<>(sfxListModel);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
-		
+
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-		
+
 		JTextField nameField = new JTextField(30);
 		Dimension fieldSize = new Dimension(300, 25);
 		nameField.setMaximumSize(fieldSize);
@@ -848,7 +848,7 @@ public class EditorConfigDialog extends JDialog {
 		rightPanel.add(sfxLabel);
 		rightPanel.add(nameField);
 		rightPanel.add(Box.createVerticalStrut(10));
-		
+
 		JButton addNew = new JButton("Add");
 		JButton delete = new JButton("Delete");
 		JButton moveUp = new JButton("Move Up");
@@ -866,7 +866,7 @@ public class EditorConfigDialog extends JDialog {
 		moveDown.setPreferredSize(btnSize);
 		moveDown.setMaximumSize(btnSize);
 		moveDown.setAlignmentX(Component.LEFT_ALIGNMENT);
-		
+
 		final boolean[] sfxUpdatingFromSelection = {false};
 		list.addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting() && list.getSelectedIndex() >= 0) {
@@ -890,7 +890,7 @@ public class EditorConfigDialog extends JDialog {
 			public void removeUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 			public void changedUpdate(javax.swing.event.DocumentEvent e) { autoUpdate(); }
 		});
-		
+
 		addNew.addActionListener(e -> {
 			String name = JOptionPane.showInputDialog(this, "Enter SFX name:");
 			if (name != null && !name.trim().isEmpty()) {
@@ -900,7 +900,7 @@ public class EditorConfigDialog extends JDialog {
 				list.setSelectedIndex(idx);
 			}
 		});
-		
+
 		delete.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx >= 0) {
@@ -916,7 +916,7 @@ public class EditorConfigDialog extends JDialog {
 				}
 			}
 		});
-		
+
 		moveUp.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx > 0) {
@@ -926,7 +926,7 @@ public class EditorConfigDialog extends JDialog {
 				rebuildSfxList();
 			}
 		});
-		
+
 		moveDown.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx >= 0 && idx < sfxListModel.size() - 1) {
@@ -936,7 +936,7 @@ public class EditorConfigDialog extends JDialog {
 				rebuildSfxList();
 			}
 		});
-		
+
 		rightPanel.add(addNew);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(delete);
@@ -944,19 +944,19 @@ public class EditorConfigDialog extends JDialog {
 		rightPanel.add(moveUp);
 		rightPanel.add(Box.createVerticalStrut(4));
 		rightPanel.add(moveDown);
-		
+
 		panel.add(rightPanel, BorderLayout.EAST);
-		
+
 		return panel;
 	}
-	
+
 	private JPanel createSimpleListPanel(String title, String filename) {
 		JPanel panel = new BgPanel(iMan.getImg(ResourceManager.rsrcBgBlue));
 		panel.setLayout(new BorderLayout());
-		
+
 		DefaultListModel<String> model = new DefaultListModel<>();
 		loadSimpleList(filename, model);
-		
+
 		if (filename.equals("endlist.txt")) endListModel = model;
 		else if (filename.equals("mapBosses.txt")) mapBossListModel = model;
 		else if (filename.equals("backgroundTypes.txt")) bgTypeListModel = model;
@@ -968,38 +968,38 @@ public class EditorConfigDialog extends JDialog {
 		});
 		JList<String> list = new JList<>(model);
 		panel.add(new JScrollPane(list), BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel();
 		JButton addButton = new JButton("Add");
 		JButton removeButton = new JButton("Delete");
 		Dimension btnSize = new Dimension(80, 25);
 		addButton.setPreferredSize(btnSize);
 		removeButton.setPreferredSize(btnSize);
-		
+
 		addButton.addActionListener(e -> {
 			String item = JOptionPane.showInputDialog(this, "Enter new item:");
 			if (item != null && !item.trim().isEmpty()) {
 				model.addElement(item);
 			}
 		});
-		
+
 		removeButton.addActionListener(e -> {
 			int idx = list.getSelectedIndex();
 			if (idx >= 0) {
 				model.remove(idx);
 			}
 		});
-		
+
 		buttonPanel.add(addButton);
 		buttonPanel.add(removeButton);
 		panel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		return panel;
 	}
-	
+
 	private void loadTscCommands() {
 		File fileToLoad = getEditorFile(isAutumnalLabEnabled() ? "aut/tsc_list.txt" : "tsc_list.txt");
-		
+
 		try (BufferedReader br = new BufferedReader(new FileReader(fileToLoad))) {
 			String line;
 			boolean inCommands = false;
@@ -1022,7 +1022,7 @@ public class EditorConfigDialog extends JDialog {
 						data.desc = parts[4];
 						data.unknownIds = new boolean[6];
 						data.unknownRawIds = new char[6];
-						
+
 						// Parse IDs
 						String idStr = parts[2];
 						data.ids = new String[6];
@@ -1038,7 +1038,7 @@ public class EditorConfigDialog extends JDialog {
 						for (int i = idStr.length(); i < 6; i++) {
 							data.ids[i] = "";
 						}
-						
+
 						tscCommands.put(data.name, data);
 					}
 				}
@@ -1047,7 +1047,7 @@ public class EditorConfigDialog extends JDialog {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private String charToIdType(char c) {
 		switch (c) {
 			case 'a': return "Arms";
@@ -1076,7 +1076,7 @@ public class EditorConfigDialog extends JDialog {
 			default: return "None";
 		}
 	}
-	
+
 	private char idTypeToChar(String type) {
 		if (type == null || type.isEmpty() || type.equals("None")) return '-';
 		switch (type) {
@@ -1106,7 +1106,7 @@ public class EditorConfigDialog extends JDialog {
 			default: return '-';
 		}
 	}
-	
+
 	private void loadTscCommandDetails(String cmd) {
 		if (cmd == null) return;
 		TscCommandData data = tscCommands.get(cmd);
@@ -1129,7 +1129,7 @@ public class EditorConfigDialog extends JDialog {
 			loadingTscDetails = false;
 		}
 	}
-	
+
 	private void saveTscCommandDetails() {
 		if (loadingTscDetails) return;
 		String cmd = tscCommandList.getSelectedValue();
@@ -1156,7 +1156,7 @@ public class EditorConfigDialog extends JDialog {
 		data.desc = desc;
 		markRestartRequired();
 	}
-	
+
 	private void updateIdComboStates() {
 		int ops = (Integer) opsCombo.getSelectedItem();
 		for (int i = 0; i < 6; i++) {
@@ -1171,14 +1171,14 @@ public class EditorConfigDialog extends JDialog {
 			}
 		}
 	}
-	
+
 	private String extractMusicName(String fullLine) {
 		if (fullLine.length() > 5) {
 			return fullLine.substring(5);
 		}
 		return "";
 	}
-	
+
 	private String extractSfxName(String fullLine) {
 		int dashIndex = fullLine.indexOf(" - ");
 		if (dashIndex >= 0 && dashIndex + 3 < fullLine.length()) {
@@ -1186,7 +1186,7 @@ public class EditorConfigDialog extends JDialog {
 		}
 		return "";
 	}
-	
+
 	private void rebuildMusicList() {
 		for (int i = 0; i < musicListModel.size(); i++) {
 			String fullLine = musicListModel.get(i);
@@ -1195,7 +1195,7 @@ public class EditorConfigDialog extends JDialog {
 			musicListModel.set(i, newLine);
 		}
 	}
-	
+
 	private void rebuildSfxList() {
 		for (int i = 0; i < sfxListModel.size(); i++) {
 			String fullLine = sfxListModel.get(i);
@@ -1204,7 +1204,7 @@ public class EditorConfigDialog extends JDialog {
 			sfxListModel.set(i, newLine);
 		}
 	}
-	
+
 	private void loadMusicList() {
 		File fileToLoad = new File("musiclist.txt");
 		

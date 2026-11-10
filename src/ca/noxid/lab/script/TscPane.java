@@ -1907,9 +1907,9 @@ public class TscPane extends JTextPane implements ActionListener, Changeable {
 		Set<String> rv = new HashSet<>();
 		File f = getJarLocationFile("endlist.txt");
 		if (!f.exists()) {
-			rv.add("<END"); rv.add("<EVE"); rv.add("<TRA");
+			rv.add("<END"); rv.add("<EVE"); rv.add("<TRA"); rv.add("<PSH"); rv.add("<POP");
 			try (java.io.PrintWriter pw = new java.io.PrintWriter(f)) {
-				pw.println("<END"); pw.println("<EVE"); pw.println("<TRA");
+				pw.println("<END"); pw.println("<EVE"); pw.println("<TRA"); pw.println("<PSH"); pw.println("<POP");
 			} catch (IOException ignored) {}
 			return rv;
 		}

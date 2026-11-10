@@ -351,9 +351,12 @@ public class EditorApp extends JFrame implements ActionListener {
 		try {
 			InputStream is = ResourceManager.openThemedResource(getTheme(), filename);
 			if (is == null) return new ImageIcon();
-			Image img = ImageIO.read(is);
+
+			byte[] imageData = is.readAllBytes();
 			is.close();
-			return img != null ? new ImageIcon(img) : new ImageIcon();
+
+			return new ImageIcon(imageData);
+
 		} catch (Exception e) {
 			return new ImageIcon();
 		}
@@ -2719,7 +2722,7 @@ public class EditorApp extends JFrame implements ActionListener {
 				minutes = 15; // "fifteen minutes"
 			}
 
-			int delayInMilliseconds = timeUnits * 1_000;
+			int delayInMilliseconds = minutes * 60 * 1_000;
 
 			autoSaveTimer = new javax.swing.Timer(delayInMilliseconds, e -> {
 				if (data.isModified()

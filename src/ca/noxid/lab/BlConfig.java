@@ -149,8 +149,16 @@ public class BlConfig {
 			tileSize = 16;
 		} else if (type == GameInfo.MOD_TYPE.MOD_CS_PLUS_2011) {
 			File nicalisFile = new File(dataDir, "Nicalis.bmp");
+			File csdhorencoreFile = new File(dataDir, "texture_sizes.json");
 
 			if (nicalisFile.exists()) {
+				tileSize = 32;
+				entityResolution = 32;
+			} else {
+				tileSize = 16;
+				entityResolution = 16;
+			}
+			if (csdhorencoreFile.exists()) {
 				tileSize = 32;
 				entityResolution = 32;
 			} else {

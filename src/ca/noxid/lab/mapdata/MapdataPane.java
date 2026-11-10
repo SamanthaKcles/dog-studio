@@ -116,6 +116,8 @@ public class MapdataPane extends BgPanel implements ActionListener, Changeable {
 		bgType.setEnabled(false);
 	}
 
+	public GameInfo.MOD_TYPE type;
+
 	private void addComponentsToPane(Container c, GameInfo i) {
 		BlConfig conf = i.getConfig();
 		nameField = new UpdateTextField();
@@ -148,7 +150,7 @@ public class MapdataPane extends BgPanel implements ActionListener, Changeable {
 		bossType.setSelectedIndex(dat.getBoss());
 		bossType.addActionListener(this);
 		lightingList = new JComboBox<>(lightingTypes);
-		if (EditorApp.EDITOR_MODE != 0) {
+		if (type == GameInfo.MOD_TYPE.MOD_CS_PLUS_2026) {
 			switch (dat.getLighting())
 			{
 			case "disabled":
@@ -164,7 +166,7 @@ public class MapdataPane extends BgPanel implements ActionListener, Changeable {
 		}
 		lightingList.addActionListener(this);
 		cameraList = new JComboBox<>(cameraTypes);
-		if (EditorApp.EDITOR_MODE != 0) {
+		if (type == GameInfo.MOD_TYPE.MOD_CS_PLUS_2026) {
 			switch (dat.getCamera())
 			{
 			case "normal":
@@ -199,21 +201,17 @@ public class MapdataPane extends BgPanel implements ActionListener, Changeable {
 		c.add(new JLabel(Messages.getString("MapdataPane.30"))); //$NON-NLS-1$
 		c.add(bossType);
 		c.add(new JLabel(Messages.getString("MapdataPane.35"))); //$NON-NLS-1$
-		c.add(new JLabel(Messages.getString("MapdataPane.39"))); //$NON-NLS-1$
-
 		c.add(lightingList);
-
+		c.add(new JLabel(Messages.getString("MapdataPane.39"))); //$NON-NLS-1$
 		c.add(cameraList);
-
 	}
-	
 	public boolean allFieldsCommitted() {
 		return nameField.isCommited() && fileField.isCommited();
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent eve) {
-		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub		// what you mean `auto-generated`? I hope this wasn't ai gen but then again this was prob made before 2022 - dr. ragtime
 		Object src = eve.getSource();
 		//System.out.println(eve.getSource());
 		if (src == nameField || src == fileField) {
