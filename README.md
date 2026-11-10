@@ -1,4 +1,4 @@
-# Dog Studio  
+# Dog Studio CS+2026 Fork
 A Cave Story level editor built off of Noxid’s Booster’s Lab. Don't get it twisted, though, it's its own thing.
 
 # Purpose  
