@@ -1,20 +1,20 @@
-# [RESERVED]'s {RESERVED}
-A Cave Story level editor built off of Noxid’s Booster’s Lab.
+# Misery's Magica
+A Cave Story level editor built off of Sam & K’s [Dog Studio](https://github.com/SamanthaKcles/dog-studio).
 
 # Purpose  
 I wanted Dog Studio to truly be a, "everything editor"... So I made this.
 
 # Features  
-I’m going to assume you’re familiar with Booster’s Lab, or Dog Studio. If not, that’s okay, too. Here is a list of all the new features:
+Here is a list of the new features in this editor:
 
 ### General
 
 - **Discord RPC**  
   - Showcase your love for this Editor!!
 - **Cave Story+ 2026 Support**  
-  - Now you can finally use Dog Studio instead of the Booster's Lab Fork.
+  - Now you can finally use Misery's Magica instead of the [Booster's Lab Fork](https://github.com/Clownacy/boosters-lab-csplus-2026).
 - **Other Engines too!!**
-  - doukutsu-rs, Cave Story+ 2011/2012, nxengine-evo / nxengine, & Cave Story ~ Encore (Partial Support).  These require loading a `stage.tbl`!
+  - doukutsu-rs, Cave Story+ 2011/2012, nxengine-evo / nxengine, & Cave Story ~ Encore (*Partial Support*).  These require loading a `stage.tbl`!
 - **Auto-save**  
   - With choices between off, 2 minutes, 5 minutes, & 15 minutes...
 - **Animating GIF Support for Themes**
